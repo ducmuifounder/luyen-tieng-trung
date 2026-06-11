@@ -137,13 +137,13 @@ export function PracticeClient({ unit, initialProgress, userId }: Props) {
         if (!res.ok) throw new Error();
         const data: { score?: number; feedback?: string; detail?: ScoreDetail; error?: string } = await res.json();
 
-        if (data.error) {
-          setError(`Lỗi: ${data.error}`);
+        if (data.error || data.score === undefined) {
+          setError(`Lỗi: ${data.error ?? "Không nhận được điểm"}`);
           return;
         }
 
-        setScore(data.score!);
-        setFeedback(data.feedback!);
+        setScore(data.score);
+        setFeedback(data.feedback ?? "");
         setDetail(data.detail ?? null);
 
         const newBest = Math.max(bestScore, data.score);
