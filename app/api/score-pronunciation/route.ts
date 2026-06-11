@@ -55,11 +55,19 @@ function buildFeedback(score: number, unitName: string): string {
 // ─── Gọi SpeechSuper API ─────────────────────────────────────────────────────
 async function assessWithSpeechSuper(
   audioBuffer: Buffer,
-  referenceText: string
+  referenceText: string,
+  mimeType: string
 ): Promise<ScoreResult> {
-  const timestamp  = Math.floor(Date.now() / 1000);
-  const token      = buildToken(timestamp);
+  const timestamp   = Math.floor(Date.now() / 1000);
+  const token       = buildToken(timestamp);
   const audioBase64 = audioBuffer.toString("base64");
+
+  // Nhận diện format từ MIME type do client gửi lên
+  // iOS Safari → audio/mp4 (aac)
+  // Chrome/Android → audio/webm;codecs=opus
+  const isMP4      = mimeType.includes("mp4");
+  const audioType  = isMP4 ? "mp4" : "webm";
+  const audioEnc   = isMP4 ? "aac"  : "opus";
 
   const body = {
     appkey:    APP_KEY,
@@ -67,12 +75,12 @@ async function assessWithSpeechSuper(
     timestamp,
     query: {
       coreType:        CORE_TYPE,
-      refText:         referenceText,  // văn bản tham chiếu (âm cần chấm)
-      audioType:       "webm",         // trình duyệt ghi ra webm/opus
+      refText:         referenceText,
+      audioType,
       audioSampleRate: 16000,
-      audioEncoding:   "opus",
+      audioEncoding:   audioEnc,
       audio:           audioBase64,
-      language:        "zh-CN",        // Phổ thông tiếng Trung
+      language:        "zh-CN",
     },
   };
 
@@ -138,10 +146,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Thiếu file audio." }, { status: 400 });
     }
 
+    const mimeType    = (form.get("mimeType") as string) || "audio/webm";
     const arrayBuffer = await audioFile.arrayBuffer();
     const audioBuffer = Buffer.from(arrayBuffer);
 
-    const result = await assessWithSpeechSuper(audioBuffer, unitName);
+    const result = await assessWithSpeechSuper(audioBuffer, unitName, mimeType);
     return NextResponse.json(result);
 
   } catch (err) {

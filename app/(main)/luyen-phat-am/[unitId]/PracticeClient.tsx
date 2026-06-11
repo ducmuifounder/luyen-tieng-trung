@@ -74,7 +74,15 @@ export function PracticeClient({ unit, initialProgress, userId }: Props) {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+
+      // Tự động chọn format: iOS Safari chỉ hỗ trợ mp4, Android/Chrome hỗ trợ webm
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/webm")
+        ? "audio/webm"
+        : "audio/mp4";
+
+      const recorder = new MediaRecorder(stream, { mimeType });
       mediaRecorder.current = recorder;
 
       recorder.ondataavailable = (e) => {
@@ -83,8 +91,8 @@ export function PracticeClient({ unit, initialProgress, userId }: Props) {
 
       recorder.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(audioChunks.current, { type: "audio/webm" });
-        await submitAudio(blob);
+        const blob = new Blob(audioChunks.current, { type: mimeType });
+        await submitAudio(blob, mimeType);
       };
 
       recorder.start();
@@ -112,9 +120,12 @@ export function PracticeClient({ unit, initialProgress, userId }: Props) {
 
   // --- Gửi API chấm điểm ---
   const submitAudio = useCallback(
-    async (blob: Blob) => {
+    async (blob: Blob, mimeType: string) => {
+      // Đặt tên file đúng extension để server nhận diện format
+      const ext = mimeType.includes("mp4") ? "mp4" : "webm";
       const form = new FormData();
-      form.append("audio", blob, "recording.webm");
+      form.append("audio", blob, `recording.${ext}`);
+      form.append("mimeType", mimeType);
       form.append("unitName", unit.name);
       form.append("unitType", unit.type);
 
