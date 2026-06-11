@@ -154,9 +154,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result);
 
   } catch (err) {
-    console.error("[score-pronunciation]", err);
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[score-pronunciation]", msg);
+    // Tạm thời trả về lỗi chi tiết để debug
     return NextResponse.json(
-      { error: "Không thể chấm điểm. Vui lòng thử lại." },
+      { error: msg },
       { status: 500 }
     );
   }

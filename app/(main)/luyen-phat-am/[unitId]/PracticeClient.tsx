@@ -135,10 +135,15 @@ export function PracticeClient({ unit, initialProgress, userId }: Props) {
           body: form,
         });
         if (!res.ok) throw new Error();
-        const data: { score: number; feedback: string; detail?: ScoreDetail } = await res.json();
+        const data: { score?: number; feedback?: string; detail?: ScoreDetail; error?: string } = await res.json();
 
-        setScore(data.score);
-        setFeedback(data.feedback);
+        if (data.error) {
+          setError(`Lỗi: ${data.error}`);
+          return;
+        }
+
+        setScore(data.score!);
+        setFeedback(data.feedback!);
         setDetail(data.detail ?? null);
 
         const newBest = Math.max(bestScore, data.score);
