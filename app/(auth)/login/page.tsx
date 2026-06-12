@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import { LogoCircle } from "@/components/LogoCircle";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -40,16 +40,10 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-8">
       <div className="w-full max-w-sm">
 
-        {/* ── Logo ── */}
-        <div className="mb-8 flex flex-col items-center gap-3">
-          <div className="relative h-28 w-28 overflow-hidden rounded-full shadow-lg ring-4 ring-white">
-            <Image
-              src="/logo.png"
-              alt="Tiếng Trung Bùi Nga"
-              fill
-              className="object-cover"
-              priority
-            />
+        {/* ── Logo SVG ── */}
+        <div className="mb-8 flex flex-col items-center gap-4">
+          <div className="rounded-full shadow-xl ring-4 ring-white">
+            <LogoCircle size={140} />
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900">
@@ -66,7 +60,7 @@ export default function LoginPage() {
         >
           {/* Tên học viên */}
           <div>
-            <label className="mb-1.5 block text-sm font-semibold text-gray-700">
+            <label className="mb-1.5 block text-sm font-semibold text-gray-800">
               Tên học viên
             </label>
             <input
@@ -75,17 +69,16 @@ export default function LoginPage() {
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Nhập tên của bạn..."
               autoComplete="username"
-              style={{ color: "#111827" }}          /* Màu chữ đen rõ trên mọi thiết bị */
+              style={{ color: "#111827", WebkitTextFillColor: "#111827" }}
               className="w-full rounded-xl border border-gray-400 bg-gray-100 px-4 py-3
-                         text-sm text-gray-900 placeholder-gray-400 outline-none
-                         transition focus:border-green-600 focus:bg-white focus:ring-2
-                         focus:ring-green-100"
+                         text-sm placeholder-gray-400 outline-none transition
+                         focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-100"
             />
           </div>
 
           {/* Mật khẩu */}
           <div>
-            <label className="mb-1.5 block text-sm font-semibold text-gray-700">
+            <label className="mb-1.5 block text-sm font-semibold text-gray-800">
               Mật khẩu
             </label>
             <input
@@ -94,11 +87,10 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Nhập mật khẩu..."
               autoComplete="current-password"
-              style={{ color: "#111827" }}
+              style={{ color: "#111827", WebkitTextFillColor: "#111827" }}
               className="w-full rounded-xl border border-gray-400 bg-gray-100 px-4 py-3
-                         text-sm text-gray-900 placeholder-gray-400 outline-none
-                         transition focus:border-green-600 focus:bg-white focus:ring-2
-                         focus:ring-green-100"
+                         text-sm placeholder-gray-400 outline-none transition
+                         focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-100"
             />
           </div>
 
@@ -109,7 +101,7 @@ export default function LoginPage() {
             </p>
           )}
 
-          {/* Nút */}
+          {/* Nút vào học */}
           <button
             type="submit"
             disabled={loading}
@@ -125,10 +117,10 @@ export default function LoginPage() {
           </p>
         </form>
 
-        {/* Zalo */}
-        <p className="mt-4 text-center text-xs text-gray-400">
+        {/* Zalo hỗ trợ */}
+        <p className="mt-5 text-center text-xs text-gray-400">
           Hỗ trợ: Zalo{" "}
-          <a href="tel:0368004855" className="font-medium text-green-700">
+          <a href="tel:0368004855" className="font-semibold text-green-700">
             036 800 4855
           </a>
         </p>
