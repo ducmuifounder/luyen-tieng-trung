@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { LogoCircle } from "@/components/LogoCircle";
+import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -40,15 +40,19 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-8">
       <div className="w-full max-w-sm">
 
-        {/* ── Logo SVG ── */}
+        {/* ── Logo ảnh thật ── */}
         <div className="mb-8 flex flex-col items-center gap-4">
-          <div className="rounded-full shadow-xl ring-4 ring-white">
-            <LogoCircle size={140} />
+          <div className="relative h-36 w-36 overflow-hidden rounded-full shadow-xl ring-4 ring-white">
+            <Image
+              src="/logo.png"
+              alt="Tiếng Trung Bùi Nga"
+              fill
+              className="object-cover"
+              priority
+            />
           </div>
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900">
-              Tiếng Trung Bùi Nga
-            </h1>
+            <h1 className="text-2xl font-bold text-gray-900">Tiếng Trung Bùi Nga</h1>
             <p className="mt-0.5 text-sm text-gray-500">Cùng luyện phát âm nhé!</p>
           </div>
         </div>
@@ -58,7 +62,6 @@ export default function LoginPage() {
           onSubmit={handleSubmit}
           className="space-y-4 rounded-3xl bg-white p-6 shadow-md ring-1 ring-gray-200"
         >
-          {/* Tên học viên */}
           <div>
             <label className="mb-1.5 block text-sm font-semibold text-gray-800">
               Tên học viên
@@ -76,7 +79,6 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* Mật khẩu */}
           <div>
             <label className="mb-1.5 block text-sm font-semibold text-gray-800">
               Mật khẩu
@@ -94,14 +96,12 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* Lỗi */}
           {error && (
             <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-medium text-red-600">
               {error}
             </p>
           )}
 
-          {/* Nút vào học */}
           <button
             type="submit"
             disabled={loading}
@@ -117,7 +117,6 @@ export default function LoginPage() {
           </p>
         </form>
 
-        {/* Zalo hỗ trợ */}
         <p className="mt-5 text-center text-xs text-gray-400">
           Hỗ trợ: Zalo{" "}
           <a href="tel:0368004855" className="font-semibold text-green-700">
