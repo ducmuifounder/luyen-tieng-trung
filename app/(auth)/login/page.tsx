@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,24 +17,16 @@ export default function LoginPage() {
       setError("Vui lòng nhập đầy đủ tên và mật khẩu.");
       return;
     }
-
     setLoading(true);
     setError("");
-
     try {
       const res = await fetch("/api/auth", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ username: username.trim(), password }),
       });
-
       const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error ?? "Đăng nhập thất bại.");
-        return;
-      }
-
+      if (!res.ok) { setError(data.error ?? "Đăng nhập thất bại."); return; }
       router.push("/luyen-phat-am");
       router.refresh();
     } catch {
@@ -44,24 +37,36 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-red-50 to-white px-4">
+    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-8">
       <div className="w-full max-w-sm">
-        {/* Logo / Header */}
-        <div className="mb-8 text-center">
-          <div className="mb-3 text-5xl">🇨🇳</div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Tiếng Trung Bùi Nga
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">Cùng luyện phát âm nhé!</p>
+
+        {/* ── Logo ── */}
+        <div className="mb-8 flex flex-col items-center gap-3">
+          <div className="relative h-28 w-28 overflow-hidden rounded-full shadow-lg ring-4 ring-white">
+            <Image
+              src="/logo.png"
+              alt="Tiếng Trung Bùi Nga"
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900">
+              Tiếng Trung Bùi Nga
+            </h1>
+            <p className="mt-0.5 text-sm text-gray-500">Cùng luyện phát âm nhé!</p>
+          </div>
         </div>
 
-        {/* Form */}
+        {/* ── Form ── */}
         <form
           onSubmit={handleSubmit}
-          className="space-y-4 rounded-3xl bg-white p-6 shadow-lg ring-1 ring-gray-100"
+          className="space-y-4 rounded-3xl bg-white p-6 shadow-md ring-1 ring-gray-200"
         >
+          {/* Tên học viên */}
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+            <label className="mb-1.5 block text-sm font-semibold text-gray-700">
               Tên học viên
             </label>
             <input
@@ -70,14 +75,17 @@ export default function LoginPage() {
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Nhập tên của bạn..."
               autoComplete="username"
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm
-                         outline-none transition focus:border-red-400 focus:ring-2
-                         focus:ring-red-100"
+              style={{ color: "#111827" }}          /* Màu chữ đen rõ trên mọi thiết bị */
+              className="w-full rounded-xl border border-gray-400 bg-gray-100 px-4 py-3
+                         text-sm text-gray-900 placeholder-gray-400 outline-none
+                         transition focus:border-green-600 focus:bg-white focus:ring-2
+                         focus:ring-green-100"
             />
           </div>
 
+          {/* Mật khẩu */}
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+            <label className="mb-1.5 block text-sm font-semibold text-gray-700">
               Mật khẩu
             </label>
             <input
@@ -86,31 +94,44 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Nhập mật khẩu..."
               autoComplete="current-password"
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm
-                         outline-none transition focus:border-red-400 focus:ring-2
-                         focus:ring-red-100"
+              style={{ color: "#111827" }}
+              className="w-full rounded-xl border border-gray-400 bg-gray-100 px-4 py-3
+                         text-sm text-gray-900 placeholder-gray-400 outline-none
+                         transition focus:border-green-600 focus:bg-white focus:ring-2
+                         focus:ring-green-100"
             />
           </div>
 
+          {/* Lỗi */}
           {error && (
-            <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">
+            <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-medium text-red-600">
               {error}
             </p>
           )}
 
+          {/* Nút */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-red-600 py-3.5 text-sm font-semibold
-                       text-white transition hover:bg-red-700 disabled:opacity-60"
+            className="w-full rounded-xl bg-red-600 py-3.5 text-sm font-bold
+                       text-white shadow-sm transition hover:bg-red-700
+                       active:scale-95 disabled:opacity-60"
           >
             {loading ? "Đang vào..." : "Vào học ngay"}
           </button>
 
           <p className="text-center text-xs text-gray-400">
-            Tên mới? Hệ thống tự tạo tài khoản cho bạn 🎉
+            Tên mới → tự tạo tài khoản · Tên cũ → đăng nhập ngay 🎉
           </p>
         </form>
+
+        {/* Zalo */}
+        <p className="mt-4 text-center text-xs text-gray-400">
+          Hỗ trợ: Zalo{" "}
+          <a href="tel:0368004855" className="font-medium text-green-700">
+            036 800 4855
+          </a>
+        </p>
       </div>
     </main>
   );
