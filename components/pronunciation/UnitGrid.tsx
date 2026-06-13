@@ -11,10 +11,9 @@ interface Props {
 }
 
 export function UnitGrid({ units, progressMap }: Props) {
-  const [activeTab, setActiveTab] = useState<PronunciationType | "all">("all");
+  const [activeTab, setActiveTab] = useState<PronunciationType | "all">("initial");
 
-  const filtered =
-    activeTab === "all" ? units : units.filter((u) => u.type === activeTab);
+  const filtered = units.filter((u) => u.type === activeTab);
 
   return (
     <div className="space-y-6">

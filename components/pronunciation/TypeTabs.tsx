@@ -3,7 +3,6 @@
 import { PronunciationType } from "@/lib/types";
 
 const TABS: { label: string; value: PronunciationType | "all" }[] = [
-  { label: "Tất cả", value: "all" },
   { label: "Thanh mẫu", value: "initial" },
   { label: "Vận mẫu", value: "final" },
   { label: "Thanh điệu", value: "tone" },
