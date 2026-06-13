@@ -264,7 +264,9 @@ export function PracticeClient({
           src={getVideoUrl(unit.name)}
           playsInline
           disablePictureInPicture
-          className="w-full"
+          muted={false}
+          className="w-full pointer-events-none"
+          style={{ WebkitMediaControls: "none" } as React.CSSProperties}
           onError={(e) => { (e.target as HTMLVideoElement).style.display = "none"; }}
         />
       </div>
