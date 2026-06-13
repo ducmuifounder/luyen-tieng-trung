@@ -43,9 +43,10 @@ export async function POST(req: NextRequest) {
       ScoreCoeff: 1.0,
       ServerType: 1,          // 1 = tiếng Trung phổ thông
       TextMode:   0,          // 0 = text thường
-      UserVoiceData: base64Audio,
-      VoiceFileType: audio.type.includes("mp4") ? 3 : 1, // 1=wav/webm, 3=mp4
-      IsEnd:      1,
+      UserVoiceData:   base64Audio,
+      VoiceFileType:   audio.type.includes("mp4") ? 3 : 1, // 1=wav/webm, 3=mp4
+      VoiceEncodeType: 1, // 1 = base64
+      IsEnd:           1,
     });
 
     const pronScore  = result?.PronAccuracy  ?? result?.SuggestedScore ?? 0;
