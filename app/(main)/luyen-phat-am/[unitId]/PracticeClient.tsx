@@ -25,8 +25,7 @@ const PASS_THRESHOLD  = 65;
 
 interface ScoreDetail {
   pronunciation: number;
-  fluency:       number;
-  integrity:     number;
+  toneScore:     number;
 }
 
 interface Props {
@@ -143,13 +142,13 @@ export function PracticeClient({
       form.append("unitType", unit.type);
 
       try {
-        // 1. Chấm điểm SpeechSuper
-        const scoreRes = await fetch("/api/score-pronunciation", {
+        // 1. Chấm điểm Tencent SOE
+        const scoreRes = await fetch("/api/evaluate-pronunciation", {
           method: "POST",
           body:   form,
         });
         const scoreData: {
-          score?: number; feedback?: string; detail?: ScoreDetail; error?: string;
+          score?: number; toneScore?: number; feedback?: string; error?: string;
         } = await scoreRes.json();
 
         if (scoreData.error || scoreData.score === undefined) {
@@ -159,7 +158,7 @@ export function PracticeClient({
 
         setScore(scoreData.score);
         setFeedback(scoreData.feedback ?? "");
-        setDetail(scoreData.detail ?? null);
+        setDetail({ pronunciation: scoreData.score, toneScore: scoreData.toneScore ?? 0 });
 
         // 2. Lưu vào Supabase qua API route
         if (studentId) {
@@ -355,11 +354,10 @@ export function PracticeClient({
           )}
 
           {detail && (
-            <div className="grid grid-cols-3 gap-2 border-t pt-3">
+            <div className="grid grid-cols-2 gap-2 border-t pt-3">
               {[
-                { label: "Phát âm",  value: detail.pronunciation },
-                { label: "Lưu loát", value: detail.fluency },
-                { label: "Đầy đủ",   value: detail.integrity },
+                { label: "Phát âm",   value: detail.pronunciation },
+                { label: "Thanh điệu", value: detail.toneScore },
               ].map((item) => (
                 <div key={item.label} className="flex flex-col items-center rounded-xl bg-gray-50 py-2">
                   <span className="text-lg font-bold text-gray-800">{item.value}</span>

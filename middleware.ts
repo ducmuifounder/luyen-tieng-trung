@@ -32,7 +32,7 @@ async function verifySession(value: string): Promise<string | null> {
 }
 
 // Các path không cần đăng nhập
-const PUBLIC = ["/login", "/api/auth", "/api/score-pronunciation", "/logo.png"];
+const PUBLIC = ["/login", "/api/auth", "/api/score-pronunciation", "/api/evaluate-pronunciation", "/logo.png"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
