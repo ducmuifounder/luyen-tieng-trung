@@ -3,6 +3,17 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { PronunciationUnit } from "@/lib/types";
 
+const STORAGE_URL = "https://arghgksrulxfyzxawmmq.supabase.co/storage/v1/object/public/videos";
+
+function getVideoUrl(name: string): string {
+  const map: Record<string, string> = {
+    ü: "v", üe: "ve", üan: "van", ün: "vn",
+    iu: "iou", ui: "uei", un: "uen",
+  };
+  const fileName = map[name] ?? name;
+  return `${STORAGE_URL}/${fileName}.mp4`;
+}
+
 const TYPE_LABEL: Record<string, string> = {
   initial: "Thanh mẫu",
   final:   "Vận mẫu",
@@ -236,6 +247,18 @@ export function PracticeClient({
             </div>
           </div>
         )}
+      </div>
+
+      {/* Video hướng dẫn phát âm */}
+      <div className="rounded-3xl overflow-hidden bg-black shadow-md">
+        <video
+          key={unit.name}
+          src={getVideoUrl(unit.name)}
+          controls
+          playsInline
+          className="w-full"
+          onError={(e) => { (e.target as HTMLVideoElement).style.display = "none"; }}
+        />
       </div>
 
       {/* Hướng dẫn */}
