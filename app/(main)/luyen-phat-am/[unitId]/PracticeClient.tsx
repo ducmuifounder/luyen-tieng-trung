@@ -62,6 +62,7 @@ export function PracticeClient({
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks   = useRef<Blob[]>([]);
   const audioRef      = useRef<HTMLAudioElement | null>(null);
+  const videoRef      = useRef<HTMLVideoElement | null>(null);
 
   const locked = attemptCount >= MAX_ATTEMPTS;
 
@@ -69,8 +70,14 @@ export function PracticeClient({
     return () => mediaRecorder.current?.stream?.getTracks().forEach((t) => t.stop());
   }, []);
 
-  // ── Phát âm mẫu ─────────────────────────────────────────────────────────────
+  // ── Phát âm mẫu: ưu tiên phát audio từ video ────────────────────────────────
   const handlePlaySample = useCallback(() => {
+    const vid = videoRef.current;
+    if (vid) {
+      vid.currentTime = 0;
+      vid.play();
+      return;
+    }
     if (!unit.audio_url) return;
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
@@ -214,11 +221,11 @@ export function PracticeClient({
   return (
     <div className="mx-auto max-w-lg space-y-6">
       {/* Thẻ tên âm */}
-      <div className="flex flex-col items-center gap-3 rounded-3xl bg-white px-8 py-10 shadow-md border border-gray-100">
+      <div className="flex flex-col items-center gap-2 rounded-3xl bg-white px-8 py-5 shadow-md border border-gray-100">
         <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
           {TYPE_LABEL[unit.type]}
         </span>
-        <span className="text-8xl font-bold text-gray-900">{unit.name}</span>
+        <span className="text-6xl font-bold text-gray-900">{unit.name}</span>
 
         {/* Badge trạng thái */}
         {highestScore >= PASS_THRESHOLD && (
@@ -253,6 +260,7 @@ export function PracticeClient({
       <div className="rounded-3xl overflow-hidden bg-black shadow-md">
         <video
           key={unit.name}
+          ref={videoRef}
           src={getVideoUrl(unit.name)}
           controls
           playsInline
@@ -275,7 +283,7 @@ export function PracticeClient({
         {/* Nghe mẫu */}
         <button
           onClick={handlePlaySample}
-          disabled={!unit.audio_url}
+          disabled={false}
           className="flex items-center justify-center gap-2 rounded-2xl border-2
                      border-red-200 bg-white py-4 text-base font-semibold text-red-600
                      transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
@@ -283,7 +291,7 @@ export function PracticeClient({
           <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
             <path d="M8 5v14l11-7z" />
           </svg>
-          {unit.audio_url ? "Nghe mẫu" : "Nghe mẫu (chưa có audio)"}
+          Nghe mẫu
         </button>
 
         {/* Ghi âm / Khóa */}
