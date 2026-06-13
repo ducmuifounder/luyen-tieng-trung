@@ -10,6 +10,7 @@ export interface PronunciationUnit {
   lip_tip: string | null;
   tongue_tip: string | null;
   correction_guide: string | null;
+  description: string | null;
   audio_url: string | null;
   video_url: string | null;
 }

@@ -269,12 +269,11 @@ export function PracticeClient({
         />
       </div>
 
-      {/* Hướng dẫn */}
-      {(unit.overview || unit.lip_tip || unit.tongue_tip) && (
-        <div className="space-y-2 rounded-2xl bg-amber-50 p-4 text-sm text-gray-700">
-          {unit.overview   && <p><span className="font-semibold">Tổng quan:</span> {unit.overview}</p>}
-          {unit.lip_tip    && <p><span className="font-semibold">Khẩu hình môi:</span> {unit.lip_tip}</p>}
-          {unit.tongue_tip && <p><span className="font-semibold">Vị trí lưỡi:</span> {unit.tongue_tip}</p>}
+      {/* Hướng dẫn phát âm */}
+      {unit.description && (
+        <div className="rounded-2xl bg-amber-50 p-4 text-sm text-gray-700 leading-relaxed">
+          <p className="mb-1 font-semibold text-amber-700">Hướng dẫn phát âm</p>
+          <p>{unit.description}</p>
         </div>
       )}
 
