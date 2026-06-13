@@ -70,19 +70,14 @@ export function PracticeClient({
     return () => mediaRecorder.current?.stream?.getTracks().forEach((t) => t.stop());
   }, []);
 
-  // ── Phát âm mẫu: dùng Audio API để tránh fullscreen trên iOS ───────────────
+  // ── Phát âm mẫu ─────────────────────────────────────────────────────────────
   const handlePlaySample = useCallback(() => {
-    const src = unit.audio_url ?? getVideoUrl(unit.name);
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current.play();
-    } else {
-      const audio = new Audio(src);
-      audioRef.current = audio;
-      audio.play();
+    const vid = videoRef.current;
+    if (vid) {
+      vid.currentTime = 0;
+      vid.play();
     }
-  }, [unit.audio_url, unit.name]);
+  }, []);
 
   // ── Bắt đầu ghi âm ──────────────────────────────────────────────────────────
   const startRecording = useCallback(async () => {
