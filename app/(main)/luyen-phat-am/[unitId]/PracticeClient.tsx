@@ -262,8 +262,8 @@ export function PracticeClient({
           key={unit.name}
           ref={videoRef}
           src={getVideoUrl(unit.name)}
-          controls
           playsInline
+          disablePictureInPicture
           className="w-full"
           onError={(e) => { (e.target as HTMLVideoElement).style.display = "none"; }}
         />
@@ -271,9 +271,9 @@ export function PracticeClient({
 
       {/* Hướng dẫn phát âm */}
       {unit.description && (
-        <div className="rounded-2xl bg-amber-50 p-4 text-sm text-gray-700 leading-relaxed">
-          <p className="mb-1 font-semibold text-amber-700">Hướng dẫn phát âm</p>
-          <p>{unit.description}</p>
+        <div className="rounded-2xl bg-amber-50 p-4 leading-relaxed">
+          <p className="mb-2 font-bold text-amber-700 text-base">Hướng dẫn phát âm</p>
+          <p className="text-base font-semibold text-gray-800">{unit.description}</p>
         </div>
       )}
 
