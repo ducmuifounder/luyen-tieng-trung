@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-// @ts-ignore
-import SoeClient from "tencentcloud-sdk-nodejs-soe/tencentcloud/services/soe/v20180724/soe_client";
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const tencentcloud = require("tencentcloud-sdk-nodejs-soe");
+const SoeClient = tencentcloud.soe.v20180724.Client;
 
 const SECRET_ID  = process.env.TENCENT_SECRET_ID  ?? "";
 const SECRET_KEY = process.env.TENCENT_SECRET_KEY ?? "";
