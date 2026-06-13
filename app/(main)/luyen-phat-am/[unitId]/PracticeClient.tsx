@@ -70,24 +70,19 @@ export function PracticeClient({
     return () => mediaRecorder.current?.stream?.getTracks().forEach((t) => t.stop());
   }, []);
 
-  // ── Phát âm mẫu: ưu tiên phát audio từ video ────────────────────────────────
+  // ── Phát âm mẫu: dùng Audio API để tránh fullscreen trên iOS ───────────────
   const handlePlaySample = useCallback(() => {
-    const vid = videoRef.current;
-    if (vid) {
-      vid.currentTime = 0;
-      vid.play();
-      return;
-    }
-    if (!unit.audio_url) return;
+    const src = unit.audio_url ?? getVideoUrl(unit.name);
     if (audioRef.current) {
+      audioRef.current.pause();
       audioRef.current.currentTime = 0;
       audioRef.current.play();
     } else {
-      const audio = new Audio(unit.audio_url);
+      const audio = new Audio(src);
       audioRef.current = audio;
       audio.play();
     }
-  }, [unit.audio_url]);
+  }, [unit.audio_url, unit.name]);
 
   // ── Bắt đầu ghi âm ──────────────────────────────────────────────────────────
   const startRecording = useCallback(async () => {
@@ -262,11 +257,9 @@ export function PracticeClient({
           key={unit.name}
           ref={videoRef}
           src={getVideoUrl(unit.name)}
+          controls
           playsInline
-          disablePictureInPicture
-          muted={false}
-          className="w-full pointer-events-none"
-          style={{ WebkitMediaControls: "none" } as React.CSSProperties}
+          className="w-full"
           onError={(e) => { (e.target as HTMLVideoElement).style.display = "none"; }}
         />
       </div>
