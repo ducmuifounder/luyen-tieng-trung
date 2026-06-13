@@ -33,9 +33,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const seqId = Math.floor(Math.random() * 2999) + 1;
     const result = await client.TransmitOralProcessWithInit({
-      SeqId:      seqId,
+      SeqId:      1,
       SessionId:  `ltc-${Date.now()}`,
       RefText:    unitName,
       WorkMode:   1,          // 1 = âm tiết/từ đơn lẻ
