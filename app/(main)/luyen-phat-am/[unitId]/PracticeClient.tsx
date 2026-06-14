@@ -15,6 +15,10 @@ function getVideoUrl(name: string): string {
   return `${STORAGE_URL}/${fileName}.mp4`;
 }
 
+const TONE_DISPLAY: Record<string, string> = {
+  "ā": "ˉ", "á": "ˊ", "ǎ": "ˇ", "à": "ˋ",
+};
+
 const TYPE_LABEL: Record<string, string> = {
   initial: "Thanh mẫu",
   final:   "Vận mẫu",
@@ -217,7 +221,9 @@ export function PracticeClient({
         <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
           {TYPE_LABEL[unit.type]}
         </span>
-        <span className="text-6xl font-bold text-gray-900 lowercase">{unit.name}</span>
+        <span className="text-6xl font-bold text-gray-900 lowercase">
+          {TONE_DISPLAY[unit.name] ?? unit.name}
+        </span>
 
         {/* Badge trạng thái */}
         {highestScore >= PASS_THRESHOLD && (
