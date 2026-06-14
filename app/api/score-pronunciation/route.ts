@@ -19,28 +19,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Chưa cấu hình AZURE_SPEECH_KEY." }, { status: 500 });
     }
 
-    // Cấu hình Pronunciation Assessment (Base64)
-    const assessmentConfig = {
-      ReferenceText:      unitName,
-      GradingSystem:      "HundredMark",
-      Dimension:          "Comprehensive",
-      EnableMiscue:       false,
-      ScenarioId:         "",
-      EnableProsodyAssessment: false,
-    };
-    const assessmentBase64 = Buffer.from(JSON.stringify(assessmentConfig)).toString("base64");
+    const audioBuffer = await audio.arrayBuffer();
 
-    // Xác định Content-Type gửi lên Azure
-    let contentType = "audio/webm;codecs=opus";
+    // Chọn Content-Type đúng theo định dạng thiết bị
+    let contentType = "audio/webm; codecs=opus";
     if (mimeType.includes("mp4") || mimeType.includes("aac")) {
       contentType = "audio/mp4";
     } else if (mimeType.includes("ogg")) {
-      contentType = "audio/ogg;codecs=opus";
+      contentType = "audio/ogg; codecs=opus";
     }
 
-    const audioBuffer = await audio.arrayBuffer();
+    // Cấu hình Pronunciation Assessment
+    const assessmentBase64 = Buffer.from(JSON.stringify({
+      ReferenceText: unitName,
+      GradingSystem: "HundredMark",
+      Dimension:     "Comprehensive",
+      EnableMiscue:  false,
+    })).toString("base64");
 
-    // Gọi Azure Speech API
     const azureRes = await fetch(AZURE_URL, {
       method: "POST",
       headers: {
@@ -62,14 +58,12 @@ export async function POST(req: NextRequest) {
 
     const result = await azureRes.json();
 
-    // Lấy điểm từ kết quả Azure
-    const pa          = result?.NBest?.[0]?.PronunciationAssessment;
-    const pronScore   = pa?.PronScore        ?? pa?.AccuracyScore ?? 0;
-    const accurScore  = pa?.AccuracyScore    ?? 0;
-    const fluScore    = pa?.FluencyScore     ?? 0;
-    const compScore   = pa?.CompletenessScore ?? 0;
+    const pa         = result?.NBest?.[0]?.PronunciationAssessment;
+    const pronScore  = pa?.PronScore        ?? pa?.AccuracyScore ?? 0;
+    const accurScore = pa?.AccuracyScore    ?? 0;
+    const fluScore   = pa?.FluencyScore     ?? 0;
+    const compScore  = pa?.CompletenessScore ?? 0;
 
-    // Feedback theo điểm
     let feedback = "";
     if (pronScore >= 90)      feedback = "Xuất sắc! Phát âm rất chuẩn.";
     else if (pronScore >= 75) feedback = "Tốt! Tiếp tục luyện tập thêm.";
@@ -80,10 +74,10 @@ export async function POST(req: NextRequest) {
       score:    Math.round(pronScore),
       feedback,
       detail: {
-        pronunciation:  Math.round(pronScore),
-        accuracy:       Math.round(accurScore),
-        fluency:        Math.round(fluScore),
-        completeness:   Math.round(compScore),
+        pronunciation: Math.round(pronScore),
+        accuracy:      Math.round(accurScore),
+        fluency:       Math.round(fluScore),
+        completeness:  Math.round(compScore),
       },
     });
 
