@@ -19,7 +19,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Chưa cấu hình AZURE_SPEECH_KEY." }, { status: 500 });
     }
 
+    const unitType    = (form.get("unitType") as string | null) ?? "";
     const audioBuffer = await audio.arrayBuffer();
+
+    // Với thanh mẫu (initial), ghép "a" để tạo âm tiết hợp lệ cho Azure zh-CN
+    const referenceText = unitType === "initial" ? unitName + "a" : unitName;
 
     // Chọn Content-Type đúng theo định dạng thiết bị
     let contentType = "audio/webm; codecs=opus";
@@ -31,7 +35,7 @@ export async function POST(req: NextRequest) {
 
     // Cấu hình Pronunciation Assessment
     const assessmentBase64 = Buffer.from(JSON.stringify({
-      ReferenceText: unitName,
+      ReferenceText: referenceText,
       GradingSystem: "HundredMark",
       Dimension:     "Comprehensive",
       EnableMiscue:  false,
