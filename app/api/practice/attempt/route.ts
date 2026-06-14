@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-const MAX_ATTEMPTS = 3;
+const MAX_ATTEMPTS = 10; // tạm tăng để test
 
 export interface AttemptPayload {
   itemId:         string;

@@ -20,7 +20,7 @@ const TYPE_LABEL: Record<string, string> = {
   tone:    "Thanh điệu",
 };
 
-const MAX_ATTEMPTS    = 3;
+const MAX_ATTEMPTS    = 10; // tạm tăng để test
 const PASS_THRESHOLD  = 65;
 
 interface ScoreDetail {

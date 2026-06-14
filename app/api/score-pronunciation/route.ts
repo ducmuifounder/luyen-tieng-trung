@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await azureRes.json();
+    console.log("[score-pronunciation] Azure result:", JSON.stringify(result));
 
     const pa         = result?.NBest?.[0]?.PronunciationAssessment;
     const pronScore  = pa?.PronScore        ?? pa?.AccuracyScore ?? 0;
