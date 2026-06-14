@@ -217,7 +217,7 @@ export function PracticeClient({
         <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
           {TYPE_LABEL[unit.type]}
         </span>
-        <span className="text-6xl font-bold text-gray-900">{unit.name}</span>
+        <span className="text-6xl font-bold text-gray-900 lowercase">{unit.name}</span>
 
         {/* Badge trạng thái */}
         {highestScore >= PASS_THRESHOLD && (
