@@ -71,11 +71,12 @@ export async function POST(req: NextRequest) {
     const result = await azureRes.json();
     console.log("[score-pronunciation] Azure result:", JSON.stringify(result));
 
-    const pa         = result?.NBest?.[0]?.PronunciationAssessment;
-    const accurScore = pa?.AccuracyScore     ?? 0;
-    const fluScore   = pa?.FluencyScore      ?? 0;
-    const compScore  = pa?.CompletenessScore ?? 0;
-    const rawPron    = pa?.PronScore         ?? 0;
+    // Scores nằm thẳng trong NBest[0], KHÔNG phải NBest[0].PronunciationAssessment
+    const nb         = result?.NBest?.[0];
+    const accurScore = nb?.AccuracyScore     ?? 0;
+    const fluScore   = nb?.FluencyScore      ?? 0;
+    const compScore  = nb?.CompletenessScore ?? 0;
+    const rawPron    = nb?.PronScore         ?? 0;
 
     // Với âm tiết đơn lẻ, Fluency & Completeness thường = 0 (không có câu để đo)
     // → dùng AccuracyScore làm điểm chính, đây mới phản ánh độ chuẩn phát âm.
