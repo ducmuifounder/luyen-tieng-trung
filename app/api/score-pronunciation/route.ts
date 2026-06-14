@@ -72,22 +72,26 @@ export async function POST(req: NextRequest) {
     console.log("[score-pronunciation] Azure result:", JSON.stringify(result));
 
     const pa         = result?.NBest?.[0]?.PronunciationAssessment;
-    const pronScore  = pa?.PronScore        ?? pa?.AccuracyScore ?? 0;
-    const accurScore = pa?.AccuracyScore    ?? 0;
-    const fluScore   = pa?.FluencyScore     ?? 0;
+    const accurScore = pa?.AccuracyScore     ?? 0;
+    const fluScore   = pa?.FluencyScore      ?? 0;
     const compScore  = pa?.CompletenessScore ?? 0;
+    const rawPron    = pa?.PronScore         ?? 0;
+
+    // Với âm tiết đơn lẻ, Fluency & Completeness thường = 0 (không có câu để đo)
+    // → dùng AccuracyScore làm điểm chính, đây mới phản ánh độ chuẩn phát âm.
+    const score = Math.round(accurScore || rawPron);
 
     let feedback = "";
-    if (pronScore >= 90)      feedback = "Xuất sắc! Phát âm rất chuẩn.";
-    else if (pronScore >= 75) feedback = "Tốt! Tiếp tục luyện tập thêm.";
-    else if (pronScore >= 65) feedback = "Đạt yêu cầu. Cần luyện thêm.";
-    else                      feedback = "Chưa đạt. Hãy nghe mẫu và thử lại.";
+    if (score >= 90)      feedback = "Xuất sắc! Phát âm rất chuẩn.";
+    else if (score >= 75) feedback = "Tốt! Tiếp tục luyện tập thêm.";
+    else if (score >= 65) feedback = "Đạt yêu cầu. Cần luyện thêm.";
+    else                  feedback = "Chưa đạt. Hãy nghe mẫu và thử lại.";
 
     return NextResponse.json({
-      score:    Math.round(pronScore),
+      score,
       feedback,
       detail: {
-        pronunciation: Math.round(pronScore),
+        pronunciation: Math.round(accurScore),
         accuracy:      Math.round(accurScore),
         fluency:       Math.round(fluScore),
         completeness:  Math.round(compScore),
