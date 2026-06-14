@@ -36,6 +36,10 @@ export async function POST(req: NextRequest) {
       contentType = "audio/ogg; codecs=opus";
     }
 
+    console.log("[score-pronunciation] gửi Azure:", JSON.stringify({
+      contentType, referenceText, mimeType, audioBytes: audioBuffer.byteLength,
+    }));
+
     // Cấu hình Pronunciation Assessment
     const assessmentBase64 = Buffer.from(JSON.stringify({
       ReferenceText: referenceText,
