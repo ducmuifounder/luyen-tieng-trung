@@ -60,6 +60,8 @@ export function PracticeClient({
 
   const locked = attemptCount >= MAX_ATTEMPTS;
 
+  const hanzi = getHanzi(initial, final, toneNum);
+
   const cards: { key: CardKey; label: string; name: string; videoFile: string; ref: React.RefObject<HTMLVideoElement | null> }[] = [
     { key: "initial", label: "Thanh mẫu",  name: initial,                   videoFile: initial,                ref: initialVidRef },
     { key: "final",   label: "Vận mẫu",    name: displayFinalName(final),   videoFile: finalVideoFile(final),  ref: finalVidRef   },
@@ -125,7 +127,6 @@ export function PracticeClient({
       form.append("mimeType", mimeType);
     }
     // Azure zh-CN chấm chính xác khi reference là chữ Hán. Gửi Hán tự nếu có.
-    const hanzi = getHanzi(initial, final, toneNum);
     form.append("unitName", hanzi ?? pinyin);
     form.append("unitType", hanzi ? "hanzi" : "combined");
 
@@ -158,7 +159,7 @@ export function PracticeClient({
     } finally {
       setRecordState("idle");
     }
-  }, [pinyin, itemId, studentId, initial, final, toneNum]);
+  }, [pinyin, itemId, studentId, hanzi]);
 
   const backUrl = `/luyen-phat-am/thanh-dieu?initial=${encodeURIComponent(initial)}&final=${encodeURIComponent(final)}`;
 
@@ -178,6 +179,7 @@ export function PracticeClient({
       <div className="flex flex-col items-center rounded-3xl bg-white shadow-md border border-gray-100 px-8 py-5 gap-2">
         <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">Pinyin</span>
         <span className="text-6xl font-bold text-gray-900">{pinyin}</span>
+        {hanzi && <span className="text-2xl text-gray-400">{hanzi}</span>}
 
         {highestScore > 0 && (
           <div className="w-full mt-1">
