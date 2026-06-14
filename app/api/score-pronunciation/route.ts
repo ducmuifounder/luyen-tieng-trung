@@ -22,12 +22,9 @@ export async function POST(req: NextRequest) {
     const unitType    = (form.get("unitType") as string | null) ?? "";
     const audioBuffer = await audio.arrayBuffer();
 
-    // Với thanh mẫu (initial), ghép "a" để tạo âm tiết hợp lệ cho Azure zh-CN
-    // Với thanh điệu, map sang âm tiết có thanh tương ứng
-    const toneMap: Record<string, string> = { "ā": "ā", "á": "á", "ǎ": "ǎ", "à": "à" };
-    const referenceText = unitType === "initial"
-      ? unitName + "a"
-      : toneMap[unitName] ?? unitName;
+    // combined = pinyin đầy đủ từ luồng 6 màn hình → dùng trực tiếp
+    // initial  = thanh mẫu đơn → ghép "a" để tạo âm tiết hợp lệ
+    const referenceText = unitType === "initial" ? unitName + "a" : unitName;
 
     // Chọn Content-Type đúng theo định dạng thiết bị
     let contentType = "audio/webm; codecs=opus";
