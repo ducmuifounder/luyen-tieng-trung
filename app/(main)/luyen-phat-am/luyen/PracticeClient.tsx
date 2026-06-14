@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { displayFinalName, finalVideoFile, toneVideoFile, TONE_MARKS_DISPLAY, TONE_NAMES } from "@/lib/pinyin-data";
+import { blobToWav16k } from "@/lib/wav";
 
 const STORAGE_URL   = "https://arghgksrulxfyzxawmmq.supabase.co/storage/v1/object/public/videos";
 const MAX_ATTEMPTS  = 10;
@@ -110,10 +111,18 @@ export function PracticeClient({
   }, [locked]); // eslint-disable-line
 
   const submitAudio = useCallback(async (blob: Blob, mimeType: string) => {
-    const ext  = mimeType.includes("mp4") ? "mp4" : "webm";
     const form = new FormData();
-    form.append("audio",    blob, `rec.${ext}`);
-    form.append("mimeType", mimeType);
+    try {
+      // Chuyển sang WAV 16kHz mono để Azure đọc chuẩn (tránh lỗi webm thiếu duration)
+      const wav = await blobToWav16k(blob);
+      form.append("audio",    wav, "rec.wav");
+      form.append("mimeType", "audio/wav");
+    } catch {
+      // Nếu không decode được, gửi nguyên bản
+      const ext = mimeType.includes("mp4") ? "mp4" : "webm";
+      form.append("audio",    blob, `rec.${ext}`);
+      form.append("mimeType", mimeType);
+    }
     form.append("unitName", pinyin);
     form.append("unitType", "combined");
 

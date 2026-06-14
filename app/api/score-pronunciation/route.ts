@@ -28,7 +28,9 @@ export async function POST(req: NextRequest) {
 
     // Chọn Content-Type đúng theo định dạng thiết bị
     let contentType = "audio/webm; codecs=opus";
-    if (mimeType.includes("mp4") || mimeType.includes("aac")) {
+    if (mimeType.includes("wav")) {
+      contentType = "audio/wav; codecs=audio/pcm; samplerate=16000";
+    } else if (mimeType.includes("mp4") || mimeType.includes("aac")) {
       contentType = "audio/mp4";
     } else if (mimeType.includes("ogg")) {
       contentType = "audio/ogg; codecs=opus";
