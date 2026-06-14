@@ -9,7 +9,7 @@ function getVideoUrl(name: string): string {
   const map: Record<string, string> = {
     ü: "v", üe: "ve", üan: "van", ün: "vn",
     iu: "iou", ui: "uei", un: "uen",
-    "1": "a1", "2": "a2", "3": "a3", "4": "a4",
+    "ā": "a1", "á": "a2", "ǎ": "a3", "à": "a4",
   };
   const fileName = map[name] ?? name;
   return `${STORAGE_URL}/${fileName}.mp4`;
