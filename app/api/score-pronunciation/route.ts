@@ -22,7 +22,8 @@ export async function POST(req: NextRequest) {
     const unitType    = (form.get("unitType") as string | null) ?? "";
     const audioBuffer = await audio.arrayBuffer();
 
-    // combined = pinyin đầy đủ từ luồng 6 màn hình → dùng trực tiếp
+    // hanzi    = chữ Hán → Azure chấm chuẩn nhất, dùng trực tiếp
+    // combined = pinyin đầy đủ (fallback khi không có Hán tự)
     // initial  = thanh mẫu đơn → ghép "a" để tạo âm tiết hợp lệ
     const referenceText = unitType === "initial" ? unitName + "a" : unitName;
 

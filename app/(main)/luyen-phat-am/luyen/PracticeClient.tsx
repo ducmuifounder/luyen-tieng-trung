@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { displayFinalName, finalVideoFile, toneVideoFile, TONE_MARKS_DISPLAY, TONE_NAMES } from "@/lib/pinyin-data";
 import { blobToWav16k } from "@/lib/wav";
+import { getHanzi } from "@/lib/hanzi-map";
 
 const STORAGE_URL   = "https://arghgksrulxfyzxawmmq.supabase.co/storage/v1/object/public/videos";
 const MAX_ATTEMPTS  = 10;
@@ -123,8 +124,10 @@ export function PracticeClient({
       form.append("audio",    blob, `rec.${ext}`);
       form.append("mimeType", mimeType);
     }
-    form.append("unitName", pinyin);
-    form.append("unitType", "combined");
+    // Azure zh-CN chấm chính xác khi reference là chữ Hán. Gửi Hán tự nếu có.
+    const hanzi = getHanzi(initial, final, toneNum);
+    form.append("unitName", hanzi ?? pinyin);
+    form.append("unitType", hanzi ? "hanzi" : "combined");
 
     try {
       const res  = await fetch("/api/score-pronunciation", { method: "POST", body: form });
@@ -155,7 +158,7 @@ export function PracticeClient({
     } finally {
       setRecordState("idle");
     }
-  }, [pinyin, itemId, studentId]);
+  }, [pinyin, itemId, studentId, initial, final, toneNum]);
 
   const backUrl = `/luyen-phat-am/thanh-dieu?initial=${encodeURIComponent(initial)}&final=${encodeURIComponent(final)}`;
 
