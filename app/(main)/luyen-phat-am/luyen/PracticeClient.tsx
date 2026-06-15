@@ -11,6 +11,10 @@ const MAX_ATTEMPTS = 10;
 
 function vidUrl(file: string) { return `${STORAGE_URL}/${file}.mp4`; }
 
+// Thanh nhẹ không có khẩu hình riêng → hướng dẫn bằng chữ
+const NEUTRAL_TONE_GUIDE =
+  "Thanh nhẹ (轻声): đọc nhẹ, ngắn và nhanh, không nhấn giọng. Cao độ phụ thuộc âm tiết đứng trước.";
+
 type CardKey     = "initial" | "final" | "tone";
 type RecordState = "idle" | "recording" | "processing";
 
@@ -397,6 +401,7 @@ export function PracticeClient({
           {cards.map(card => {
             const isActive   = activeCard === card.key;
             const isInactive = activeCard !== null && !isActive;
+            const isNeutral  = card.key === "tone" && toneNum === 0;  // thanh nhẹ: thẻ chữ thay video
             return (
               <div
                 key={card.key}
@@ -405,11 +410,12 @@ export function PracticeClient({
                   activeCard === null ? "flex-1" : isActive ? "flex-[3]" : "flex-[0.7]",
                 ].join(" ")}
               >
-                {/* Khung video */}
+                {/* Khung video (hoặc thẻ chữ cho thanh nhẹ vì không có khẩu hình) */}
                 <div
                   onClick={() => handleCardClick(card.key)}
                   className={[
-                    "relative h-40 rounded-2xl overflow-hidden cursor-pointer bg-gray-900 transition-all duration-150 ease-out active:scale-95",
+                    "relative h-40 rounded-2xl overflow-hidden cursor-pointer transition-all duration-150 ease-out active:scale-95",
+                    isNeutral ? "bg-gradient-to-br from-emerald-500 to-emerald-700" : "bg-gray-900",
                     isActive ? "ring-2 ring-emerald-500 shadow-lg" : "",
                   ].join(" ")}
                   style={{
@@ -417,34 +423,49 @@ export function PracticeClient({
                     opacity: isInactive ? 0.45 : 1,
                   }}
                 >
-                  <video
-                    ref={card.ref}
-                    src={vidUrl(card.videoFile)}
-                    playsInline
-                    preload="auto"
-                    className="w-full h-full object-cover"
-                    onError={e => { (e.target as HTMLVideoElement).style.display = "none"; }}
-                    // Phát xong → tự thu nhỏ về thẻ bài ban đầu
-                    onEnded={() => setActiveCard(prev => (prev === card.key ? null : prev))}
-                  />
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent pt-6 pb-2 flex flex-col items-center">
-                    <span className="text-white font-bold text-sm leading-tight lowercase">{card.name}</span>
-                    <span className="text-white/60 text-[10px]">({card.label})</span>
-                  </div>
+                  {isNeutral ? (
+                    // Thẻ thanh nhẹ: ký hiệu lớn + mô tả ngắn
+                    <div className="flex h-full w-full flex-col items-center justify-center px-2 text-center text-white">
+                      <span className="text-5xl font-black leading-none">·</span>
+                      <span className="mt-1 text-sm font-bold">Thanh nhẹ</span>
+                      {isActive && (
+                        <span className="mt-1 text-[11px] leading-snug text-white/90">
+                          Đọc nhẹ, ngắn, không nhấn giọng
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      <video
+                        ref={card.ref}
+                        src={vidUrl(card.videoFile)}
+                        playsInline
+                        preload="auto"
+                        className="w-full h-full object-cover"
+                        onError={e => { (e.target as HTMLVideoElement).style.display = "none"; }}
+                        // Phát xong → tự thu nhỏ về thẻ bài ban đầu
+                        onEnded={() => setActiveCard(prev => (prev === card.key ? null : prev))}
+                      />
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent pt-6 pb-2 flex flex-col items-center">
+                        <span className="text-white font-bold text-sm leading-tight lowercase">{card.name}</span>
+                        <span className="text-white/60 text-[10px]">({card.label})</span>
+                      </div>
+                    </>
+                  )}
                   {isActive && (
-                    <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-white animate-pulse" />
                   )}
                 </div>
 
-                {/* Chú thích chi tiết dưới mỗi video (từ cột instruction) */}
-                {card.instruction && (
+                {/* Chú thích chi tiết dưới mỗi thẻ (DB; thanh nhẹ dùng mô tả mặc định) */}
+                {(card.instruction ?? (isNeutral ? NEUTRAL_TONE_GUIDE : null)) && (
                   <p className={[
                     "text-center leading-snug px-0.5",
                     isActive
                       ? "text-sm font-semibold text-gray-700"
                       : "text-[10px] font-medium text-gray-500 line-clamp-2",
                   ].join(" ")}>
-                    {card.instruction}
+                    {card.instruction ?? NEUTRAL_TONE_GUIDE}
                   </p>
                 )}
               </div>
@@ -494,7 +515,9 @@ export function PracticeClient({
           {/* Nhấn giữ để nói — nút Micro */}
           {!hanzi ? (
             <div className="flex-1 flex items-center justify-center text-center rounded-2xl bg-gray-100 py-4 px-2 text-xs font-medium text-gray-500">
-              Âm tiết này không tồn tại, chưa chấm được
+              {toneNum === 0
+                ? "Thanh nhẹ — xem video mẫu để luyện"
+                : "Âm tiết này không tồn tại, chưa chấm được"}
             </div>
           ) : locked ? (
             <div className="flex-1 flex items-center justify-center rounded-2xl bg-gray-100 py-4 text-xs font-medium text-gray-500">
