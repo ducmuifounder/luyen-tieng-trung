@@ -421,7 +421,11 @@ export function PracticeClient({
           </button>
 
           {/* Đọc & chấm điểm */}
-          {locked ? (
+          {!hanzi ? (
+            <div className="flex-1 flex items-center justify-center text-center rounded-2xl bg-gray-100 py-4 px-2 text-xs font-medium text-gray-500">
+              Âm tiết này không tồn tại, chưa chấm được
+            </div>
+          ) : locked ? (
             <div className="flex-1 flex items-center justify-center rounded-2xl bg-gray-100 py-4 text-xs font-medium text-gray-500">
               🔒 Hết lượt hôm nay
             </div>

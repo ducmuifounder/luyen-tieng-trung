@@ -4,6 +4,7 @@ import {
   VALID_FINALS_FOR_INITIAL, displayFinalName,
   TONE_MARKS_DISPLAY, TONE_NAMES, buildPinyin,
 } from "@/lib/pinyin-data";
+import { getHanzi } from "@/lib/hanzi-map";
 
 interface Props {
   searchParams: Promise<{ initial?: string; final?: string }>;
@@ -41,21 +42,41 @@ export default async function SelectTonePage({ searchParams }: Props) {
         </div>
       </div>
 
-      {/* 4 thanh điệu */}
+      {/* 4 thanh điệu — chỉ những thanh có chữ Hán mới chấm được */}
       <div className="grid grid-cols-2 gap-3">
-        {([1, 2, 3, 4] as const).map((t) => (
-          <Link
-            key={t}
-            href={`/luyen-phat-am/luyen?initial=${encodeURIComponent(initial)}&final=${encodeURIComponent(final)}&tone=${t}`}
-            className="flex flex-col items-center rounded-2xl bg-white border border-gray-100
-                       shadow-sm py-6 gap-1.5
-                       hover:bg-red-50 hover:border-red-300 transition"
-          >
-            <span className="text-5xl font-bold text-gray-800">{TONE_MARKS_DISPLAY[t]}</span>
-            <span className="text-sm text-gray-500">{TONE_NAMES[t]}</span>
-            <span className="text-xl font-bold text-red-600 mt-1">{buildPinyin(initial, final, t)}</span>
-          </Link>
-        ))}
+        {([1, 2, 3, 4] as const).map((t) => {
+          // Âm tiết không tồn tại trong tiếng Trung (vd "pǎ") → không có chữ Hán → khóa
+          const available = getHanzi(initial, final, t) !== null;
+
+          if (!available) {
+            return (
+              <div
+                key={t}
+                className="relative flex flex-col items-center rounded-2xl bg-gray-50
+                           border border-dashed border-gray-200 py-6 gap-1.5
+                           opacity-50 cursor-not-allowed select-none"
+              >
+                <span className="text-5xl font-bold text-gray-300">{TONE_MARKS_DISPLAY[t]}</span>
+                <span className="text-sm text-gray-400">{TONE_NAMES[t]}</span>
+                <span className="text-xs font-medium text-gray-400 mt-1">Không tồn tại</span>
+              </div>
+            );
+          }
+
+          return (
+            <Link
+              key={t}
+              href={`/luyen-phat-am/luyen?initial=${encodeURIComponent(initial)}&final=${encodeURIComponent(final)}&tone=${t}`}
+              className="flex flex-col items-center rounded-2xl bg-white border border-gray-100
+                         shadow-sm py-6 gap-1.5
+                         hover:bg-red-50 hover:border-red-300 transition"
+            >
+              <span className="text-5xl font-bold text-gray-800">{TONE_MARKS_DISPLAY[t]}</span>
+              <span className="text-sm text-gray-500">{TONE_NAMES[t]}</span>
+              <span className="text-xl font-bold text-red-600 mt-1">{buildPinyin(initial, final, t)}</span>
+            </Link>
+          );
+        })}
       </div>
     </main>
   );
