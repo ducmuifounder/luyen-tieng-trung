@@ -158,14 +158,26 @@ export function PracticeClient({
     { key: "tone",    label: "Thanh điệu", name: TONE_MARKS_DISPLAY[toneNum], instruction: instructions.tone,    videoFile: toneVideoFile(toneNum), ref: toneVidRef    },
   ];
 
-  // Preload cả 3 video & vẽ sẵn khung hình đầu để tránh trắng khung
+  // Preload cả 3 video & vẽ sẵn khung hình đầu để tránh trắng khung.
+  // Mobile (đặc biệt iOS) chỉ vẽ khung khi video được play → play câm rồi pause ngay.
   useEffect(() => {
     [initialVidRef, finalVidRef, toneVidRef].forEach(r => {
       const v = r.current;
       if (!v) return;
+      v.muted = true;          // muted → trình duyệt cho phép play tự động (không tiếng)
       v.load();
-      const paintFirstFrame = () => { try { v.currentTime = 0.05; } catch { /* noop */ } };
-      v.addEventListener("loadedmetadata", paintFirstFrame, { once: true });
+      const paintFirstFrame = async () => {
+        try {
+          await v.play();      // play câm để render khung hình đầu
+          v.pause();
+          v.currentTime = 0;
+        } catch {
+          try { v.currentTime = 0.05; } catch { /* noop */ }
+        } finally {
+          v.muted = false;     // trả lại tiếng cho nút "Nghe mẫu"
+        }
+      };
+      v.addEventListener("loadeddata", paintFirstFrame, { once: true });
     });
   }, []);
 
@@ -175,7 +187,7 @@ export function PracticeClient({
   const handlePlaySample = useCallback(() => {
     if (!activeCard) return;
     const vid = cards.find(c => c.key === activeCard)?.ref.current;
-    if (vid) { vid.currentTime = 0; vid.play(); }
+    if (vid) { vid.muted = false; vid.currentTime = 0; vid.play(); }
   }, [activeCard, cards]); // eslint-disable-line
 
   // ── NHẤN GIỮ ĐỂ NÓI (hold-to-talk) ────────────────────────────────────────
