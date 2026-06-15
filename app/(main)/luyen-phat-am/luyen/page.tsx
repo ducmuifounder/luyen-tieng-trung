@@ -46,6 +46,18 @@ export default async function PracticePage({ searchParams }: Props) {
     vietnameseMeaning = (single ?? vocabRows[0]).vietnamese_meaning ?? null;
   }
 
+  // Chú thích chi tiết cho 3 video (cột instruction). Thiếu → null → UI tự ẩn.
+  const [iInstr, fInstr, tInstr] = await Promise.all([
+    supabase.from("video_instructions").select("instruction").eq("video_type", "initial").eq("unit_key", initial).maybeSingle(),
+    supabase.from("video_instructions").select("instruction").eq("video_type", "final").eq("unit_key", final).maybeSingle(),
+    supabase.from("video_instructions").select("instruction").eq("video_type", "tone").eq("unit_key", String(toneNum)).maybeSingle(),
+  ]);
+  const instructions = {
+    initial: iInstr.data?.instruction ?? null,
+    final:   fInstr.data?.instruction ?? null,
+    tone:    tInstr.data?.instruction ?? null,
+  };
+
   if (studentId) {
     const today    = new Date().toISOString().slice(0, 10);
     const { data } = await supabase
@@ -73,6 +85,7 @@ export default async function PracticePage({ searchParams }: Props) {
       initialAttemptCount={attemptCount}
       initialHighestScore={highestScore}
       vietnameseMeaning={vietnameseMeaning}
+      instructions={instructions}
     />
   );
 }

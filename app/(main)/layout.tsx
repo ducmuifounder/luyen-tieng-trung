@@ -24,8 +24,12 @@ export default async function MainLayout({
     <div className="min-h-screen bg-gray-50">
       <nav className="sticky top-0 z-10 border-b border-gray-200 bg-white px-4 py-3">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
-          <Link href="/luyen-phat-am" className="text-lg font-bold text-red-600">
-            学中文
+          <Link
+            href="/luyen-phat-am"
+            className="flex items-baseline gap-1 whitespace-nowrap font-extrabold text-red-600"
+          >
+            <span className="text-base sm:text-lg tracking-tight">Tiếng Trung</span>
+            <span className="text-base sm:text-lg text-gray-800">Bùi Nga</span>
           </Link>
 
           <div className="flex items-center gap-3">

@@ -20,6 +20,7 @@ interface Props {
   itemId: string; studentId: string | null;
   initialAttemptCount: number; initialHighestScore: number;
   vietnameseMeaning: string | null;
+  instructions: { initial: string | null; final: string | null; tone: string | null };
 }
 
 // ── Màu theo thang điểm ──────────────────────────────────────────────────────
@@ -122,7 +123,7 @@ function ScoreRing({ value }: { value: number }) {
 export function PracticeClient({
   initial, final, toneNum, pinyin, itemId,
   studentId, initialAttemptCount, initialHighestScore,
-  vietnameseMeaning,
+  vietnameseMeaning, instructions,
 }: Props) {
   const [activeCard,   setActiveCard]   = useState<CardKey | null>(null);
   const [recordState,  setRecordState]  = useState<RecordState>("idle");
@@ -145,12 +146,12 @@ export function PracticeClient({
   const hanzi  = getHanzi(initial, final, toneNum);
 
   const cards: {
-    key: CardKey; label: string; name: string;
+    key: CardKey; label: string; name: string; instruction: string | null;
     videoFile: string; ref: React.RefObject<HTMLVideoElement | null>;
   }[] = [
-    { key: "initial", label: "Thanh mẫu",  name: initial,                     videoFile: initial,                ref: initialVidRef },
-    { key: "final",   label: "Vận mẫu",    name: displayFinalName(final),     videoFile: finalVideoFile(final),  ref: finalVidRef   },
-    { key: "tone",    label: "Thanh điệu", name: TONE_MARKS_DISPLAY[toneNum], videoFile: toneVideoFile(toneNum), ref: toneVidRef    },
+    { key: "initial", label: "Thanh mẫu",  name: initial,                     instruction: instructions.initial, videoFile: initial,                ref: initialVidRef },
+    { key: "final",   label: "Vận mẫu",    name: displayFinalName(final),     instruction: instructions.final,   videoFile: finalVideoFile(final),  ref: finalVidRef   },
+    { key: "tone",    label: "Thanh điệu", name: TONE_MARKS_DISPLAY[toneNum], instruction: instructions.tone,    videoFile: toneVideoFile(toneNum), ref: toneVidRef    },
   ];
 
   // Preload cả 3 video & vẽ sẵn khung hình đầu để tránh trắng khung
@@ -181,8 +182,8 @@ export function PracticeClient({
     setError(null); setScore(null); setDetail(null); setTips([]);
     audioChunks.current = [];
 
-    // Rung báo hiệu bắt đầu thu (chỉ hoạt động trên thiết bị hỗ trợ)
-    if (typeof navigator.vibrate === "function") navigator.vibrate(40);
+    // Rung báo hiệu bắt đầu thu (Android; iOS Safari chưa hỗ trợ Vibration API)
+    if (typeof navigator.vibrate === "function") navigator.vibrate(200);
 
     try {
       const stream   = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -249,6 +250,8 @@ export function PracticeClient({
         setError(`Lỗi: ${data.error ?? "Không nhận được điểm"}`); return;
       }
       setScore(data.score); setDetail(data.detail ?? null); setTips(data.tips ?? []);
+      // Rung báo hiệu đã chấm xong
+      if (typeof navigator.vibrate === "function") navigator.vibrate(500);
       if (studentId) {
         const r = await fetch("/api/practice/attempt", {
           method: "POST", headers: { "Content-Type": "application/json" },
@@ -358,7 +361,10 @@ export function PracticeClient({
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                 </svg>
               ) : (
-                <ScoreRing value={score ?? 0} />
+                // key đổi theo score → remount → chạy lại hiệu ứng nảy khi có kết quả
+                <div key={score ?? "none"} className={score !== null ? "animate-score-pop" : ""}>
+                  <ScoreRing value={score ?? 0} />
+                </div>
               )}
             </div>
           </div>
@@ -384,38 +390,57 @@ export function PracticeClient({
         <p className="text-center text-xs text-gray-400 -mb-1">
           Ấn vào video để xem hướng dẫn chi tiết
         </p>
-        <div className="flex gap-2 h-40">
+        <div className="flex gap-2 items-start">
           {cards.map(card => {
             const isActive   = activeCard === card.key;
             const isInactive = activeCard !== null && !isActive;
             return (
               <div
                 key={card.key}
-                onClick={() => handleCardClick(card.key)}
                 className={[
-                  "relative rounded-2xl overflow-hidden cursor-pointer bg-gray-900 transition-all duration-300",
-                  isActive ? "ring-2 ring-red-500 shadow-lg" : "",
+                  "flex flex-col gap-1 transition-all duration-300",
                   activeCard === null ? "flex-1" : isActive ? "flex-[3]" : "flex-[0.7]",
                 ].join(" ")}
-                style={{
-                  filter:  isInactive ? "blur(1.5px)" : "none",
-                  opacity: isInactive ? 0.45 : 1,
-                }}
               >
-                <video
-                  ref={card.ref}
-                  src={vidUrl(card.videoFile)}
-                  playsInline
-                  preload="auto"
-                  className="w-full h-full object-cover"
-                  onError={e => { (e.target as HTMLVideoElement).style.display = "none"; }}
-                />
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent pt-6 pb-2 flex flex-col items-center">
-                  <span className="text-white font-bold text-sm leading-tight lowercase">{card.name}</span>
-                  <span className="text-white/60 text-[10px]">({card.label})</span>
+                {/* Khung video */}
+                <div
+                  onClick={() => handleCardClick(card.key)}
+                  className={[
+                    "relative h-40 rounded-2xl overflow-hidden cursor-pointer bg-gray-900 transition-all duration-300",
+                    isActive ? "ring-2 ring-red-500 shadow-lg" : "",
+                  ].join(" ")}
+                  style={{
+                    filter:  isInactive ? "blur(1.5px)" : "none",
+                    opacity: isInactive ? 0.45 : 1,
+                  }}
+                >
+                  <video
+                    ref={card.ref}
+                    src={vidUrl(card.videoFile)}
+                    playsInline
+                    preload="auto"
+                    className="w-full h-full object-cover"
+                    onError={e => { (e.target as HTMLVideoElement).style.display = "none"; }}
+                    // Phát xong → tự thu nhỏ về thẻ bài ban đầu
+                    onEnded={() => setActiveCard(prev => (prev === card.key ? null : prev))}
+                  />
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent pt-6 pb-2 flex flex-col items-center">
+                    <span className="text-white font-bold text-sm leading-tight lowercase">{card.name}</span>
+                    <span className="text-white/60 text-[10px]">({card.label})</span>
+                  </div>
+                  {isActive && (
+                    <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                  )}
                 </div>
-                {isActive && (
-                  <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+
+                {/* Chú thích chi tiết dưới mỗi video (từ cột instruction) */}
+                {card.instruction && (
+                  <p className={[
+                    "text-center leading-snug text-gray-500 px-0.5",
+                    isActive ? "text-xs" : "text-[9px] line-clamp-2",
+                  ].join(" ")}>
+                    {card.instruction}
+                  </p>
                 )}
               </div>
             );
