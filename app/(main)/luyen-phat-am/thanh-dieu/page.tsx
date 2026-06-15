@@ -45,9 +45,9 @@ export default async function SelectTonePage({ searchParams }: Props) {
       {/* 5 thanh điệu (gồm thanh nhẹ) — chỉ những thanh có chữ Hán mới chấm được */}
       <div className="grid grid-cols-2 gap-3">
         {([1, 2, 3, 4, 0] as const).map((t) => {
-          // Thanh nhẹ (0) là kiểu phát âm → luôn chọn được.
-          // Các thanh 1-4: ẩn nếu âm tiết không tồn tại (vd "pǎ" không có chữ Hán).
-          const available = t === 0 ? true : getHanzi(initial, final, t) !== null;
+          // Ẩn thanh nếu âm tiết đó không tồn tại (không có chữ Hán → Azure không chấm được).
+          // Áp dụng cho cả thanh nhẹ (0): chỉ hiện khi có chữ đọc thanh nhẹ (吗, 呢, 了...).
+          const available = getHanzi(initial, final, t) !== null;
 
           if (!available) {
             return (
