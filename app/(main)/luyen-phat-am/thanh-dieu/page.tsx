@@ -33,9 +33,9 @@ export default async function SelectTonePage({ searchParams }: Props) {
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Bước 3 / 3</p>
           <h1 className="text-xl font-bold text-gray-800">
-            <span className="text-red-600">{initial}</span>
+            <span className="text-emerald-600">{initial}</span>
             <span className="text-gray-300 mx-1">+</span>
-            <span className="text-blue-600">{displayFinalName(final)}</span>
+            <span className="text-emerald-700">{displayFinalName(final)}</span>
             <span className="text-gray-300 mx-1">+</span>
             Chọn Thanh điệu
           </h1>
@@ -69,11 +69,11 @@ export default async function SelectTonePage({ searchParams }: Props) {
               href={`/luyen-phat-am/luyen?initial=${encodeURIComponent(initial)}&final=${encodeURIComponent(final)}&tone=${t}`}
               className="flex flex-col items-center rounded-2xl bg-white border border-gray-100
                          shadow-sm py-6 gap-1.5
-                         hover:bg-red-50 hover:border-red-300 transition"
+                         hover:bg-emerald-50 hover:border-emerald-300 transition"
             >
               <span className="text-5xl font-bold text-gray-800">{TONE_MARKS_DISPLAY[t]}</span>
               <span className="text-sm text-gray-500">{TONE_NAMES[t]}</span>
-              <span className="text-xl font-bold text-red-600 mt-1">{buildPinyin(initial, final, t)}</span>
+              <span className="text-xl font-bold text-emerald-600 mt-1">{buildPinyin(initial, final, t)}</span>
             </Link>
           );
         })}

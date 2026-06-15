@@ -33,7 +33,7 @@ export default function SelectInitialPage() {
                   href={`/luyen-phat-am/van-mau?initial=${encodeURIComponent(initial)}`}
                   className="flex items-center justify-center rounded-2xl bg-white border border-gray-100
                              shadow-sm py-5 text-2xl font-bold text-gray-800
-                             hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition"
+                             hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-600 transition"
                 >
                   {initial}
                 </Link>

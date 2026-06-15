@@ -284,7 +284,7 @@ export function PracticeClient({
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </Link>
-        <h1 className="flex-1 text-center text-base font-bold tracking-widest uppercase text-gray-800">
+        <h1 className="flex-1 text-center text-base font-bold tracking-widest uppercase text-emerald-700">
           Phòng Luyện
         </h1>
         <div className="w-5" />
@@ -292,52 +292,55 @@ export function PracticeClient({
 
       <div className="mx-auto w-full max-w-lg px-4 py-4 flex flex-col gap-4">
 
-        {/* ── 1. THÔNG TIN TỪ ─────────────────────────────────────────────── */}
+        {/* ── 1. THÔNG TIN TỪ — Hán / Pinyin / Việt trên 1 dòng ──────────────── */}
         <div className="rounded-2xl bg-white border border-gray-100 shadow-sm px-5 py-4">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-baseline flex-wrap gap-x-1.5">
+            {infoParts.map((part, i) => (
+              <span key={i} className="flex items-baseline gap-x-1.5">
+                {i > 0 && <span className="text-gray-300 font-light select-none">/</span>}
+                {part.isPinyin ? (
+                  <span className="text-[3.4rem] font-black text-emerald-600 lowercase leading-none">
+                    {part.text}
+                  </span>
+                ) : part.isVietnamese ? (
+                  <span className="text-[1.55rem] font-medium text-gray-500 leading-tight">
+                    {part.text}
+                  </span>
+                ) : (
+                  <span className="text-[2.25rem] font-bold text-gray-800 leading-none">
+                    {part.text}
+                  </span>
+                )}
+              </span>
+            ))}
+          </div>
+        </div>
 
-            {/* Dòng: Hán / Pinyin / Việt — phần nào thiếu thì tự ẩn cùng dấu "/" */}
-            <div className="flex items-baseline flex-wrap gap-x-1.5 min-w-0">
-              {infoParts.map((part, i) => (
-                <span key={i} className="flex items-baseline gap-x-1.5">
-                  {i > 0 && <span className="text-gray-300 font-light select-none">/</span>}
-                  {part.isPinyin ? (
-                    <span className="text-[3.4rem] font-black text-red-600 lowercase leading-none">
-                      {part.text}
-                    </span>
-                  ) : part.isVietnamese ? (
-                    <span className="text-[1.55rem] font-medium text-gray-500 leading-tight">
-                      {part.text}
-                    </span>
-                  ) : (
-                    <span className="text-[2.25rem] font-bold text-gray-800 leading-none">
-                      {part.text}
-                    </span>
-                  )}
-                </span>
+        {/* ── Lượt đọc — đặt dưới Header, dễ quan sát ─────────────────────────── */}
+        <div className="flex items-center justify-between rounded-2xl bg-emerald-50 border border-emerald-100 px-4 py-2.5">
+          <div className="flex items-baseline gap-2">
+            <span className="text-sm font-bold text-emerald-700">Lượt đọc</span>
+            <span className="text-base font-black text-emerald-700 tabular-nums">
+              {attemptCount}/{MAX_ATTEMPTS}
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex gap-1">
+              {Array.from({ length: MAX_ATTEMPTS }, (_, i) => (
+                <span
+                  key={i}
+                  className={`h-2 w-2 rounded-full ${i < attemptCount ? "bg-emerald-500" : "bg-emerald-200"}`}
+                />
               ))}
             </div>
-
-            {/* Lượt thử */}
-            <div className="flex flex-col items-end gap-1 flex-shrink-0">
-              <span className="text-[10px] text-gray-400 tabular-nums">{attemptCount}/{MAX_ATTEMPTS}</span>
-              <div className="flex gap-0.5">
-                {Array.from({ length: MAX_ATTEMPTS }, (_, i) => (
-                  <span
-                    key={i}
-                    className={`h-1.5 w-1.5 rounded-full ${i < attemptCount ? "bg-red-400" : "bg-gray-200"}`}
-                  />
-                ))}
-              </div>
-              {highestScore > 0 && (
-                <span className="text-[10px] font-semibold text-gray-400">
-                  Cao nhất:{" "}
-                  <span style={{ color: scoreColor(Math.round(highestScore)) }}>
-                    {Math.round(highestScore)}
-                  </span>
+            {highestScore > 0 && (
+              <span className="text-xs font-semibold text-gray-500 whitespace-nowrap">
+                Cao nhất:{" "}
+                <span style={{ color: scoreColor(Math.round(highestScore)) }}>
+                  {Math.round(highestScore)}
                 </span>
-              )}
-            </div>
+              </span>
+            )}
           </div>
         </div>
 
@@ -356,7 +359,7 @@ export function PracticeClient({
             {/* Bên phải: vòng tròn (spinner cùng kích thước khi đang chấm) */}
             <div className="flex-shrink-0 flex items-center justify-center" style={{ width: 88, height: 88 }}>
               {recordState === "processing" ? (
-                <svg className="h-10 w-10 animate-spin text-orange-400" fill="none" viewBox="0 0 24 24">
+                <svg className="h-10 w-10 animate-spin text-emerald-500" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                 </svg>
@@ -387,7 +390,7 @@ export function PracticeClient({
         </div>
 
         {/* ── 3. VIDEO CARDS ───────────────────────────────────────────────── */}
-        <p className="text-center text-xs text-gray-400 -mb-1">
+        <p className="text-center text-base font-bold text-gray-700">
           Ấn vào video để xem hướng dẫn chi tiết
         </p>
         <div className="flex gap-2 items-start">
@@ -407,7 +410,7 @@ export function PracticeClient({
                   onClick={() => handleCardClick(card.key)}
                   className={[
                     "relative h-40 rounded-2xl overflow-hidden cursor-pointer bg-gray-900 transition-all duration-300",
-                    isActive ? "ring-2 ring-red-500 shadow-lg" : "",
+                    isActive ? "ring-2 ring-emerald-500 shadow-lg" : "",
                   ].join(" ")}
                   style={{
                     filter:  isInactive ? "blur(1.5px)" : "none",
@@ -429,15 +432,17 @@ export function PracticeClient({
                     <span className="text-white/60 text-[10px]">({card.label})</span>
                   </div>
                   {isActive && (
-                    <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                    <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                   )}
                 </div>
 
                 {/* Chú thích chi tiết dưới mỗi video (từ cột instruction) */}
                 {card.instruction && (
                   <p className={[
-                    "text-center leading-snug text-gray-500 px-0.5",
-                    isActive ? "text-xs" : "text-[9px] line-clamp-2",
+                    "text-center leading-snug px-0.5",
+                    isActive
+                      ? "text-sm font-semibold text-gray-700"
+                      : "text-[10px] font-medium text-gray-500 line-clamp-2",
                   ].join(" ")}>
                     {card.instruction}
                   </p>
@@ -457,8 +462,8 @@ export function PracticeClient({
                 className={[
                   "rounded-xl border-2 px-3 py-2 min-w-[58px] text-center transition-all duration-200",
                   activeCard === card.key
-                    ? "border-red-500 bg-red-50 scale-105 shadow"
-                    : "border-gray-200 bg-white hover:border-red-300",
+                    ? "border-emerald-500 bg-emerald-50 scale-105 shadow"
+                    : "border-gray-200 bg-white hover:border-emerald-300",
                 ].join(" ")}
               >
                 <span className="text-gray-400 text-xs select-none">[</span>
@@ -476,8 +481,8 @@ export function PracticeClient({
             onClick={handlePlaySample}
             disabled={!activeCard}
             className="flex-1 flex items-center justify-center gap-2 rounded-2xl
-                       bg-red-600 py-4 text-sm font-bold text-white
-                       hover:bg-red-700 active:scale-95 transition
+                       border-2 border-emerald-500 bg-white py-4 text-sm font-bold text-emerald-700
+                       hover:bg-emerald-50 active:scale-95 transition
                        disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
@@ -510,9 +515,9 @@ export function PracticeClient({
               className={[
                 "flex-1 flex flex-col items-center justify-center gap-1 rounded-2xl py-3 font-bold text-white select-none",
                 "transition-transform",
-                recordState === "recording"  ? "bg-red-500 animate-pulse scale-105 ring-4 ring-red-200" : "",
-                recordState === "processing" ? "bg-gray-400 cursor-not-allowed"                          : "",
-                recordState === "idle"       ? "bg-orange-500 hover:bg-orange-600 active:scale-95"        : "",
+                recordState === "recording"  ? "bg-emerald-700 animate-pulse scale-105 ring-4 ring-emerald-200" : "",
+                recordState === "processing" ? "bg-gray-400 cursor-not-allowed"                              : "",
+                recordState === "idle"       ? "bg-emerald-600 hover:bg-emerald-700 active:scale-95"      : "",
               ].join(" ")}
             >
               {recordState === "processing" ? (

@@ -26,7 +26,7 @@ export default async function MainLayout({
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <Link
             href="/luyen-phat-am"
-            className="flex items-baseline gap-1 whitespace-nowrap font-extrabold text-red-600"
+            className="flex items-baseline gap-1 whitespace-nowrap font-extrabold text-emerald-600"
           >
             <span className="text-base sm:text-lg tracking-tight">Tiếng Trung</span>
             <span className="text-base sm:text-lg text-gray-800">Bùi Nga</span>
@@ -36,10 +36,10 @@ export default async function MainLayout({
             {username && (
               <Link
                 href="/profile"
-                className="flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1.5
-                           text-sm font-medium text-red-700 hover:bg-red-100 transition"
+                className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5
+                           text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition"
               >
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-200 text-xs font-bold">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-200 text-xs font-bold">
                   {username[0].toUpperCase()}
                 </span>
                 {username}

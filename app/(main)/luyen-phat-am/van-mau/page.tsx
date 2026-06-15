@@ -27,7 +27,7 @@ export default async function SelectFinalPage({ searchParams }: Props) {
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Bước 2 / 3</p>
           <h1 className="text-xl font-bold text-gray-800">
-            <span className="text-red-600">{initial}</span>
+            <span className="text-emerald-600">{initial}</span>
             <span className="text-gray-300 mx-2">+</span>
             Chọn Vận mẫu
           </h1>
@@ -42,7 +42,7 @@ export default async function SelectFinalPage({ searchParams }: Props) {
             href={`/luyen-phat-am/thanh-dieu?initial=${encodeURIComponent(initial)}&final=${encodeURIComponent(f)}`}
             className="flex items-center justify-center rounded-2xl bg-white border border-gray-100
                        shadow-sm py-4 text-lg font-semibold text-gray-800
-                       hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition"
+                       hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-600 transition"
           >
             {displayFinalName(f)}
           </Link>

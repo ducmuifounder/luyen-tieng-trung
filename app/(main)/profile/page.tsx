@@ -13,6 +13,11 @@ export default async function ProfilePage() {
   const supabase  = await createSupabaseServerClient();
   const studentId = session.studentId;
 
+  // Chỉ lấy dữ liệu trong 3 ngày gần nhất (hôm nay + 2 ngày trước)
+  const since = new Date();
+  since.setDate(since.getDate() - 2);
+  const sinceDate = since.toISOString().slice(0, 10); // YYYY-MM-DD
+
   const { data: student, error: studentErr } = await supabase
     .from("students")
     .select("username, created_at")
@@ -25,6 +30,7 @@ export default async function ProfilePage() {
     .from("daily_progress")
     .select("item_id, level, practice_date, highest_score, attempt_count")
     .eq("student_id", studentId)
+    .gte("practice_date", sinceDate)
     .order("practice_date", { ascending: false })
     .limit(200);
 
@@ -33,6 +39,7 @@ export default async function ProfilePage() {
     .select("item_id, practice_date, score, score_breakdown")
     .eq("student_id", studentId)
     .eq("level", 2)
+    .gte("practice_date", sinceDate)
     .not("score_breakdown", "is", null);
 
   const breakdownMap: Record<string, Array<{ text: string; score: number }>> = {};
@@ -70,7 +77,7 @@ export default async function ProfilePage() {
       {/* ── Nút quay lại (to, dễ bấm) ── */}
       <Link
         href="/luyen-phat-am"
-        className="flex items-center gap-2 text-sm font-semibold text-red-600 hover:text-red-700"
+        className="flex items-center gap-2 text-sm font-semibold text-emerald-600 hover:text-emerald-700"
       >
         ← Quay lại luyện tập
       </Link>
