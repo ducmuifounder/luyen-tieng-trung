@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { displayFinalName, finalVideoFile, toneVideoFile, TONE_MARKS_DISPLAY } from "@/lib/pinyin-data";
 import { blobToWav16k } from "@/lib/wav";
 import { getHanzi } from "@/lib/hanzi-map";
 
-const STORAGE_URL    = "https://arghgksrulxfyzxawmmq.supabase.co/storage/v1/object/public/videos";
-const MAX_ATTEMPTS   = 10;
-const PASS_THRESHOLD = 65;
+const STORAGE_URL  = "https://arghgksrulxfyzxawmmq.supabase.co/storage/v1/object/public/videos";
+const MAX_ATTEMPTS = 10;
 
 function vidUrl(file: string) { return `${STORAGE_URL}/${file}.mp4`; }
 
@@ -20,35 +19,132 @@ interface Props {
   initial: string; final: string; toneNum: number; pinyin: string;
   itemId: string; studentId: string | null;
   initialAttemptCount: number; initialHighestScore: number;
+  vietnameseMeaning: string | null;
 }
 
-// Vòng tròn điểm
-function ScoreRing({ value }: { value: number }) {
-  const r = 28; const c = 2 * Math.PI * r;
-  const color = value >= 90 ? "#16a34a" : value >= 65 ? "#ca8a04" : "#dc2626";
-  const dash  = (value / 100) * c;
+// ── Màu theo thang điểm ──────────────────────────────────────────────────────
+// 0–30: đỏ | 31–65: vàng | 66–100: xanh
+function scoreColor(v: number): string {
+  if (v > 65) return "#10B981";
+  if (v > 30) return "#F59E0B";
+  return "#EF4444";
+}
+
+// ── Hook: đếm từ 0 → target với easing ──────────────────────────────────────
+function useCountUp(target: number | null, duration = 1500) {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    if (target === null) { setVal(0); return; }
+    let start: number | null = null;
+    const tick = (ts: number) => {
+      if (start === null) start = ts;
+      const p = Math.min((ts - start) / duration, 1);
+      setVal(Math.round((1 - Math.pow(1 - p, 3)) * target));
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, [target, duration]);
+  return val;
+}
+
+// ── Thanh tiến trình ngang ───────────────────────────────────────────────────
+function AnimatedBar({ value }: { value: number }) {
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => setWidth(value), 60);
+    return () => clearTimeout(t);
+  }, [value]);
   return (
-    <svg width="72" height="72" viewBox="0 0 72 72">
-      <circle cx="36" cy="36" r={r} fill="none" stroke="#f3f4f6" strokeWidth="6" />
-      <circle cx="36" cy="36" r={r} fill="none" stroke={color} strokeWidth="6"
-        strokeDasharray={`${dash} ${c}`} strokeDashoffset={c / 4}
-        strokeLinecap="round" style={{ transition: "stroke-dasharray .6s ease" }} />
-      <text x="36" y="40" textAnchor="middle" fontSize="14" fontWeight="bold" fill={color}>{value}%</text>
+    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div
+        className="h-full rounded-full"
+        style={{
+          width: `${width}%`,
+          backgroundColor: scoreColor(value),
+          transition: "width 1.5s cubic-bezier(0.34,1.56,0.64,1)",
+        }}
+      />
+    </div>
+  );
+}
+
+// ── Một dòng chỉ số (label + counter + bar) ─────────────────────────────────
+function MetricRow({ label, value }: { label: string; value: number }) {
+  const displayed = useCountUp(value);
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex justify-between items-baseline">
+        <span className="text-xs font-semibold text-gray-500 tracking-wide">{label}</span>
+        <span className="text-sm font-black tabular-nums" style={{ color: scoreColor(value) }}>
+          {displayed}
+        </span>
+      </div>
+      <AnimatedBar value={value} />
+    </div>
+  );
+}
+
+// ── Vòng tròn điểm (bắt đầu tại 12 giờ) ─────────────────────────────────────
+function ScoreRing({ value }: { value: number }) {
+  const R = 36;
+  const C = 2 * Math.PI * R;
+  const color = scoreColor(value);
+  const [dash, setDash] = useState(0);
+  const displayed = useCountUp(value);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDash((value / 100) * C), 60);
+    return () => clearTimeout(t);
+  }, [value, C]);
+
+  return (
+    <svg width="88" height="88" viewBox="0 0 88 88" aria-label={`Điểm: ${value}`}>
+      {/* Track */}
+      <circle cx="44" cy="44" r={R} fill="none" stroke="#F3F4F6" strokeWidth="7" />
+      {/* Progress — bắt đầu tại 12 giờ nhờ rotate(-90) */}
+      <circle
+        cx="44" cy="44" r={R}
+        fill="none"
+        stroke={color}
+        strokeWidth="7"
+        strokeLinecap="round"
+        strokeDasharray={`${dash} ${C}`}
+        transform="rotate(-90 44 44)"
+        style={{ transition: "stroke-dasharray 1.5s cubic-bezier(0.34,1.56,0.64,1)" }}
+      />
+      <text x="44" y="40" textAnchor="middle" fontSize="19" fontWeight="800" fill={color}>{displayed}</text>
+      <text x="44" y="57" textAnchor="middle" fontSize="10" fill="#9CA3AF">điểm</text>
     </svg>
   );
 }
 
-// Badge nhận xét
-function Badge({ score }: { score: number }) {
-  if (score >= 90) return <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700">TUYỆT VỜI</span>;
-  if (score >= 75) return <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-bold text-yellow-700">XUẤT SẮC</span>;
-  if (score >= 65) return <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">ĐÃ ĐẠT</span>;
-  return <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-600">CẦN CỐ GẮNG</span>;
+// ── Skeleton khi đang chờ Azure ───────────────────────────────────────────────
+function ScoreSkeleton() {
+  return (
+    <div className="rounded-2xl bg-white border border-gray-100 shadow-sm px-5 py-4 animate-pulse">
+      <div className="flex items-center gap-5">
+        <div className="flex-1 flex flex-col gap-4">
+          {[0, 1, 2].map(i => (
+            <div key={i} className="flex flex-col gap-1.5">
+              <div className="flex justify-between">
+                <div className="h-3 w-20 bg-gray-200 rounded" />
+                <div className="h-3 w-6 bg-gray-200 rounded" />
+              </div>
+              <div className="h-2 bg-gray-200 rounded-full" />
+            </div>
+          ))}
+        </div>
+        <div className="rounded-full bg-gray-200 flex-shrink-0" style={{ width: 88, height: 88 }} />
+      </div>
+    </div>
+  );
 }
 
+// ── Component chính ───────────────────────────────────────────────────────────
 export function PracticeClient({
   initial, final, toneNum, pinyin, itemId,
   studentId, initialAttemptCount, initialHighestScore,
+  vietnameseMeaning,
 }: Props) {
   const [activeCard,   setActiveCard]   = useState<CardKey | null>(null);
   const [recordState,  setRecordState]  = useState<RecordState>("idle");
@@ -68,18 +164,21 @@ export function PracticeClient({
   const locked = attemptCount >= MAX_ATTEMPTS;
   const hanzi  = getHanzi(initial, final, toneNum);
 
-  const cards: { key: CardKey; label: string; name: string; videoFile: string; ref: React.RefObject<HTMLVideoElement | null> }[] = [
+  const cards: {
+    key: CardKey; label: string; name: string;
+    videoFile: string; ref: React.RefObject<HTMLVideoElement | null>;
+  }[] = [
     { key: "initial", label: "Thanh mẫu",  name: initial,                     videoFile: initial,                ref: initialVidRef },
     { key: "final",   label: "Vận mẫu",    name: displayFinalName(final),     videoFile: finalVideoFile(final),  ref: finalVidRef   },
     { key: "tone",    label: "Thanh điệu", name: TONE_MARKS_DISPLAY[toneNum], videoFile: toneVideoFile(toneNum), ref: toneVidRef    },
   ];
 
   const handleCardClick = (key: CardKey) =>
-    setActiveCard((prev) => (prev === key ? null : key));
+    setActiveCard(prev => prev === key ? null : key);
 
   const handlePlaySample = useCallback(() => {
     if (!activeCard) return;
-    const vid = cards.find((c) => c.key === activeCard)?.ref.current;
+    const vid = cards.find(c => c.key === activeCard)?.ref.current;
     if (vid) { vid.currentTime = 0; vid.play(); }
   }, [activeCard, cards]); // eslint-disable-line
 
@@ -95,7 +194,7 @@ export function PracticeClient({
       mediaRecorder.current = recorder;
       recorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.current.push(e.data); };
       recorder.onstop = async () => {
-        stream.getTracks().forEach((t) => t.stop());
+        stream.getTracks().forEach(t => t.stop());
         await submitAudio(new Blob(audioChunks.current, { type: mimeType }), mimeType);
       };
       recorder.start(); setRecordState("recording");
@@ -126,14 +225,19 @@ export function PracticeClient({
     try {
       const res  = await fetch("/api/score-pronunciation", { method: "POST", body: form });
       const data = await res.json() as { score?: number; feedback?: string; detail?: ScoreDetail; error?: string };
-      if (data.error || data.score === undefined) { setError(`Lỗi: ${data.error ?? "Không nhận được điểm"}`); return; }
+      if (data.error || data.score === undefined) {
+        setError(`Lỗi: ${data.error ?? "Không nhận được điểm"}`); return;
+      }
       setScore(data.score); setDetail(data.detail ?? null);
       if (studentId) {
         const r = await fetch("/api/practice/attempt", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ itemId, level: 1, score: data.score }),
         });
-        if (r.ok) { const d = await r.json(); setAttemptCount(d.attemptCount); setHighestScore(d.highestScore); }
+        if (r.ok) {
+          const d = await r.json();
+          setAttemptCount(d.attemptCount); setHighestScore(d.highestScore);
+        }
       }
     } catch { setError("Có lỗi khi chấm điểm."); }
     finally { setRecordState("idle"); }
@@ -141,8 +245,15 @@ export function PracticeClient({
 
   const backUrl = `/luyen-phat-am/thanh-dieu?initial=${encodeURIComponent(initial)}&final=${encodeURIComponent(final)}`;
 
+  // Dòng thông tin: ghép Hán / Pinyin / Việt — tự bỏ qua phần thiếu dữ liệu
+  const infoParts: { text: string; isPinyin?: boolean; isVietnamese?: boolean }[] = [];
+  if (hanzi) infoParts.push({ text: hanzi });
+  infoParts.push({ text: pinyin, isPinyin: true });
+  if (vietnameseMeaning) infoParts.push({ text: vietnameseMeaning, isVietnamese: true });
+
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-gray-50 flex flex-col">
+
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-4 py-3 flex items-center">
         <Link href={backUrl} className="text-gray-500 hover:text-gray-700 transition">
@@ -156,82 +267,85 @@ export function PracticeClient({
         <div className="w-5" />
       </div>
 
-      <div className="mx-auto max-w-lg px-4 py-4 space-y-4">
+      <div className="mx-auto w-full max-w-lg px-4 py-4 flex flex-col gap-4">
 
-        {/* ── Thẻ Hán / Pinyin ───────────────────────────────────────────── */}
-        <div className="rounded-2xl bg-white shadow-sm border border-gray-100 px-5 py-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              {hanzi && (
-                <p className="text-sm text-gray-500">
-                  <span className="font-semibold text-gray-700">Hán:</span>{" "}
-                  <span className="text-xl font-bold text-gray-900">{hanzi}</span>
-                </p>
-              )}
-              <p className="text-sm text-gray-500">
-                <span className="font-semibold text-gray-700">Pinyin:</span>{" "}
-                <span className="text-xl font-bold text-red-600">{pinyin}</span>
-              </p>
+        {/* ── 1. THÔNG TIN TỪ ─────────────────────────────────────────────── */}
+        <div className="rounded-2xl bg-white border border-gray-100 shadow-sm px-5 py-4">
+          <div className="flex items-center justify-between gap-3">
+
+            {/* Dòng: Hán / Pinyin / Việt — phần nào thiếu thì tự ẩn cùng dấu "/" */}
+            <div className="flex items-baseline flex-wrap gap-x-1.5 min-w-0">
+              {infoParts.map((part, i) => (
+                <span key={i} className="flex items-baseline gap-x-1.5">
+                  {i > 0 && <span className="text-gray-300 font-light select-none">/</span>}
+                  {part.isPinyin ? (
+                    <span className="text-3xl font-black text-red-600 lowercase leading-none">
+                      {part.text}
+                    </span>
+                  ) : part.isVietnamese ? (
+                    <span className="text-sm font-medium text-gray-500 leading-none">
+                      {part.text}
+                    </span>
+                  ) : (
+                    <span className="text-xl font-bold text-gray-800 leading-none">
+                      {part.text}
+                    </span>
+                  )}
+                </span>
+              ))}
             </div>
-            <div className="flex flex-col items-end gap-1">
-              <span className="text-xs text-gray-400">Lượt: {attemptCount}/{MAX_ATTEMPTS}</span>
-              <div className="flex gap-1">
+
+            {/* Lượt thử */}
+            <div className="flex flex-col items-end gap-1 flex-shrink-0">
+              <span className="text-[10px] text-gray-400 tabular-nums">{attemptCount}/{MAX_ATTEMPTS}</span>
+              <div className="flex gap-0.5">
                 {Array.from({ length: MAX_ATTEMPTS }, (_, i) => (
-                  <span key={i} className={`h-2 w-2 rounded-full ${i < attemptCount ? "bg-red-400" : "bg-gray-200"}`} />
+                  <span
+                    key={i}
+                    className={`h-1.5 w-1.5 rounded-full ${i < attemptCount ? "bg-red-400" : "bg-gray-200"}`}
+                  />
                 ))}
               </div>
               {highestScore > 0 && (
-                <span className="text-xs font-semibold text-gray-500">
-                  Cao nhất: <span className="text-red-600">{Math.round(highestScore)}%</span>
+                <span className="text-[10px] font-semibold text-gray-400">
+                  Cao nhất:{" "}
+                  <span style={{ color: scoreColor(Math.round(highestScore)) }}>
+                    {Math.round(highestScore)}
+                  </span>
                 </span>
               )}
             </div>
           </div>
         </div>
 
-        {/* ── Kết quả chấm điểm ──────────────────────────────────────────── */}
-        {score !== null && detail && (
-          <div className="rounded-2xl bg-white shadow-sm border border-gray-100 px-5 py-4">
-            <div className="flex items-center gap-4">
-              {/* Vòng tròn điểm */}
-              <div className="flex flex-col items-center gap-0.5">
-                <ScoreRing value={score} />
-                <span className="text-[10px] font-semibold text-gray-500">
-                  {score >= 90 ? "Tuyệt vời" : score >= 65 ? "Đã đạt" : "Cần cố gắng"}
-                </span>
+        {/* ── 2. ĐIỂM SỐ ──────────────────────────────────────────────────── */}
+
+        {/* Skeleton khi đang chờ Azure xử lý */}
+        {recordState === "processing" && <ScoreSkeleton />}
+
+        {/* Kết quả thực */}
+        {score !== null && detail && recordState !== "processing" && (
+          <div className="rounded-2xl bg-white border border-gray-100 shadow-sm px-5 py-4">
+            <div className="flex items-center gap-5">
+
+              {/* Bên trái: 3 dòng chỉ số */}
+              <div className="flex-1 flex flex-col gap-3 min-w-0">
+                <MetricRow label="Chính xác" value={detail.accuracy} />
+                <MetricRow label="Lưu loát"  value={detail.fluency}  />
+                <MetricRow label="Tổng hợp"  value={score}           />
               </div>
-              {/* Chi tiết điểm */}
-              <div className="flex-1 grid grid-cols-2 gap-2">
-                {[
-                  { label: "Chính xác", value: detail.accuracy },
-                  { label: "Lưu loát",  value: detail.fluency  },
-                  { label: "Đầy đủ",    value: detail.completeness },
-                  { label: "Tổng hợp",  value: score },
-                ].map((item) => (
-                  <div key={item.label} className="flex flex-col gap-0.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-500">{item.label}</span>
-                      <span className="text-xs font-bold text-gray-800">{item.value}%</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          item.value >= 90 ? "bg-green-500" : item.value >= 65 ? "bg-yellow-400" : "bg-red-400"
-                        }`}
-                        style={{ width: `${item.value}%` }}
-                      />
-                    </div>
-                    <Badge score={item.value} />
-                  </div>
-                ))}
+
+              {/* Bên phải: vòng tròn */}
+              <div className="flex-shrink-0">
+                <ScoreRing value={score} />
               </div>
             </div>
           </div>
         )}
 
-        {/* ── 3 Video cards ──────────────────────────────────────────────── */}
+        {/* ── 3. VIDEO CARDS ───────────────────────────────────────────────── */}
         <div className="flex gap-2 h-40">
-          {cards.map((card) => {
+          {cards.map(card => {
             const isActive   = activeCard === card.key;
             const isInactive = activeCard !== null && !isActive;
             return (
@@ -240,21 +354,23 @@ export function PracticeClient({
                 onClick={() => handleCardClick(card.key)}
                 className={[
                   "relative rounded-2xl overflow-hidden cursor-pointer bg-gray-900 transition-all duration-300",
-                  isActive   ? "ring-2 ring-red-500 shadow-lg" : "",
-                  isInactive ? "opacity-40"                    : "",
+                  isActive ? "ring-2 ring-red-500 shadow-lg" : "",
                   activeCard === null ? "flex-1" : isActive ? "flex-[3]" : "flex-[0.7]",
                 ].join(" ")}
-                style={{ filter: isInactive ? "blur(1.5px)" : "none" }}
+                style={{
+                  filter:  isInactive ? "blur(1.5px)" : "none",
+                  opacity: isInactive ? 0.45 : 1,
+                }}
               >
                 <video
                   ref={card.ref}
                   src={vidUrl(card.videoFile)}
                   playsInline
                   className="w-full h-full object-cover"
-                  onError={(e) => { (e.target as HTMLVideoElement).style.display = "none"; }}
+                  onError={e => { (e.target as HTMLVideoElement).style.display = "none"; }}
                 />
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent pt-6 pb-2 flex flex-col items-center">
-                  <span className="text-white font-bold text-sm leading-tight">{card.name}</span>
+                  <span className="text-white font-bold text-sm leading-tight lowercase">{card.name}</span>
                   <span className="text-white/60 text-[10px]">({card.label})</span>
                 </div>
                 {isActive && (
@@ -265,29 +381,29 @@ export function PracticeClient({
           })}
         </div>
 
-        {/* ── Cấu trúc từ ghép [ ] + [ ] + [ ] ──────────────────────────── */}
+        {/* ── Cấu trúc [ ] + [ ] + [ ] ─────────────────────────────────────── */}
         <div className="flex items-center justify-center gap-2">
           {cards.map((card, idx) => (
             <div key={card.key} className="flex items-center gap-2">
-              {idx > 0 && <span className="text-gray-300 font-bold text-lg">+</span>}
+              {idx > 0 && <span className="text-gray-300 font-bold text-lg select-none">+</span>}
               <button
                 onClick={() => handleCardClick(card.key)}
                 className={[
-                  "rounded-xl border-2 px-3 py-2 text-center transition-all duration-200 min-w-[60px]",
+                  "rounded-xl border-2 px-3 py-2 min-w-[58px] text-center transition-all duration-200",
                   activeCard === card.key
                     ? "border-red-500 bg-red-50 scale-105 shadow"
-                    : "border-gray-300 bg-white hover:border-red-300",
+                    : "border-gray-200 bg-white hover:border-red-300",
                 ].join(" ")}
               >
-                <span className="text-gray-400 text-xs">[</span>
-                <span className="text-base font-bold text-gray-800 mx-0.5">{card.name}</span>
-                <span className="text-gray-400 text-xs">]</span>
+                <span className="text-gray-400 text-xs select-none">[</span>
+                <span className="text-base font-bold text-gray-800 mx-0.5 lowercase">{card.name}</span>
+                <span className="text-gray-400 text-xs select-none">]</span>
               </button>
             </div>
           ))}
         </div>
 
-        {/* ── 2 Nút nằm ngang ────────────────────────────────────────────── */}
+        {/* ── 2 NÚT HÀNH ĐỘNG ─────────────────────────────────────────────── */}
         <div className="flex gap-3">
           {/* Nghe mẫu */}
           <button
@@ -295,7 +411,8 @@ export function PracticeClient({
             disabled={!activeCard}
             className="flex-1 flex items-center justify-center gap-2 rounded-2xl
                        bg-red-600 py-4 text-sm font-bold text-white
-                       hover:bg-red-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                       hover:bg-red-700 active:scale-95 transition
+                       disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
               <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
@@ -313,9 +430,10 @@ export function PracticeClient({
               onClick={startRecording}
               disabled={recordState !== "idle"}
               className={[
-                "flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 text-sm font-bold text-white transition",
-                recordState === "recording"  ? "bg-red-500 animate-pulse"       : "",
-                recordState === "processing" ? "bg-gray-400 cursor-not-allowed" : "",
+                "flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 text-sm font-bold text-white",
+                "active:scale-95 transition",
+                recordState === "recording"  ? "bg-red-500 animate-pulse"          : "",
+                recordState === "processing" ? "bg-gray-400 cursor-not-allowed"    : "",
                 recordState === "idle"       ? "bg-orange-500 hover:bg-orange-600" : "",
               ].join(" ")}
             >
@@ -343,7 +461,9 @@ export function PracticeClient({
         </div>
 
         {error && (
-          <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
+          <div className="rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-600">
+            {error}
+          </div>
         )}
       </div>
     </main>

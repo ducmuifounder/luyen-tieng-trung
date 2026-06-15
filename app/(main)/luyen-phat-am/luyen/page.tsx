@@ -27,11 +27,26 @@ export default async function PracticePage({ searchParams }: Props) {
   const pinyin    = buildPinyin(initial, final, toneNum);
   const itemId    = `${initial}-${final}-${toneNum}`;
 
-  let attemptCount = 0;
-  let highestScore = 0;
+  let attemptCount    = 0;
+  let highestScore    = 0;
+  let vietnameseMeaning: string | null = null;
+
+  const supabase = await createSupabaseServerClient();
+
+  // Tra nghĩa tiếng Việt từ bảng vocabulary (ưu tiên từ đơn âm tiết)
+  const { data: vocabRows } = await supabase
+    .from("vocabulary")
+    .select("vietnamese_meaning, chinese_char")
+    .eq("pinyin", pinyin)
+    .limit(3);
+
+  if (vocabRows && vocabRows.length > 0) {
+    // Ưu tiên từ đơn ký tự (1 chữ Hán)
+    const single = vocabRows.find(r => [...r.chinese_char].length === 1);
+    vietnameseMeaning = (single ?? vocabRows[0]).vietnamese_meaning ?? null;
+  }
 
   if (studentId) {
-    const supabase = await createSupabaseServerClient();
     const today    = new Date().toISOString().slice(0, 10);
     const { data } = await supabase
       .from("daily_progress")
@@ -57,6 +72,7 @@ export default async function PracticePage({ searchParams }: Props) {
       studentId={studentId}
       initialAttemptCount={attemptCount}
       initialHighestScore={highestScore}
+      vietnameseMeaning={vietnameseMeaning}
     />
   );
 }
