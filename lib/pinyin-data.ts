@@ -67,11 +67,11 @@ export function toneVideoFile(n: number): string {
 // ─── Thanh điệu ─────────────────────────────────────────────────────────────
 
 export const TONE_MARKS_DISPLAY: Record<number, string> = {
-  1: "ˉ", 2: "ˊ", 3: "ˇ", 4: "ˋ",
+  0: "·", 1: "ˉ", 2: "ˊ", 3: "ˇ", 4: "ˋ",
 };
 
 export const TONE_NAMES: Record<number, string> = {
-  1: "Thanh ngang", 2: "Thanh sắc", 3: "Thanh hỏi", 4: "Thanh nặng",
+  0: "Thanh nhẹ", 1: "Thanh ngang", 2: "Thanh sắc", 3: "Thanh hỏi", 4: "Thanh nặng",
 };
 
 export const TONE_DB_TO_NUM: Record<string, number> = {
@@ -104,6 +104,9 @@ export function buildPinyin(initial: string, final: string, toneNum: number): st
   } else {
     f = final.replace(/^v$/, "ü").replace(/^ve$/, "üe").replace(/^van$/, "üan").replace(/^vn$/, "ün");
   }
+
+  // Thanh nhẹ (轻声) → không có dấu thanh
+  if (toneNum === 0) return initial + f;
 
   // Quy tắc đặt dấu thanh:
   // 1. a hoặc e → đặt dấu ở đó

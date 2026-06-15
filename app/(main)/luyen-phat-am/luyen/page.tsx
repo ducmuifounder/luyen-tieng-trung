@@ -17,7 +17,7 @@ export default async function PracticePage({ searchParams }: Props) {
 
   if (
     !initial || !final ||
-    ![1, 2, 3, 4].includes(toneNum) ||
+    ![0, 1, 2, 3, 4].includes(toneNum) ||
     !VALID_FINALS_FOR_INITIAL[initial]?.includes(final)
   ) {
     redirect("/luyen-phat-am");

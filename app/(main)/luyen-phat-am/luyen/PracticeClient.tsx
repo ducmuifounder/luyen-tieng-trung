@@ -401,16 +401,15 @@ export function PracticeClient({
               <div
                 key={card.key}
                 className={[
-                  "flex flex-col gap-1 transition-all duration-300",
+                  "flex flex-col gap-1 transition-all duration-150 ease-out",
                   activeCard === null ? "flex-1" : isActive ? "flex-[3]" : "flex-[0.7]",
                 ].join(" ")}
               >
                 {/* Khung video */}
                 <div
-                  data-tap
                   onClick={() => handleCardClick(card.key)}
                   className={[
-                    "relative h-40 rounded-2xl overflow-hidden cursor-pointer bg-gray-900 transition-all duration-300",
+                    "relative h-40 rounded-2xl overflow-hidden cursor-pointer bg-gray-900 transition-all duration-150 ease-out active:scale-95",
                     isActive ? "ring-2 ring-emerald-500 shadow-lg" : "",
                   ].join(" ")}
                   style={{

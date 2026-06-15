@@ -5,6 +5,9 @@
 // Hiển thị cho học viên vẫn là pinyin; chữ Hán chỉ dùng nội bộ gửi Azure.
 
 export const PINYIN_TO_HANZI: Record<string, string> = {
+  // Thanh nhẹ (轻声) — các âm tiết đọc nhẹ thường gặp
+  ma0:"吗", ne0:"呢", ba0:"吧", le0:"了", de0:"的",
+  zi0:"子", me0:"么", men0:"们", ge0:"个", tou0:"头",
   // b
   ba1:"八", ba2:"拔", ba3:"把", ba4:"爸",
   bo1:"波", bo2:"伯", bo3:"跛", bo4:"簸",

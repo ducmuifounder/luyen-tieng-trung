@@ -42,10 +42,11 @@ export default async function SelectTonePage({ searchParams }: Props) {
         </div>
       </div>
 
-      {/* 4 thanh điệu — chỉ những thanh có chữ Hán mới chấm được */}
+      {/* 5 thanh điệu (gồm thanh nhẹ) — chỉ những thanh có chữ Hán mới chấm được */}
       <div className="grid grid-cols-2 gap-3">
-        {([1, 2, 3, 4] as const).map((t) => {
+        {([1, 2, 3, 4, 0] as const).map((t) => {
           // Âm tiết không tồn tại trong tiếng Trung (vd "pǎ") → không có chữ Hán → khóa
+          // Thanh nhẹ (0) chỉ hiện ở những âm có cách đọc nhẹ (吗, 呢, 了...)
           const available = getHanzi(initial, final, t) !== null;
 
           if (!available) {

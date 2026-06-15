@@ -30,12 +30,13 @@ button, a, [role="button"], [data-tap] {
   -webkit-tap-highlight-color: transparent;  /* bỏ ô xám nhấp nháy khi chạm */
   touch-action: manipulation;                /* bỏ delay 300ms, chặn double-tap zoom */
 }
-/* Phản hồi nhấn nhanh & mượt cho phần tử tương tác */
+/* Phản hồi nhấn TỨC THÌ: thu nhỏ ngay khi chạm, bật lại nhanh khi thả */
 [data-tap] {
-  transition: transform 0.12s ease, opacity 0.12s ease, box-shadow 0.2s ease;
+  will-change: transform;
 }
 [data-tap]:active {
-  transform: scale(0.96);
+  transform: scale(0.95);
+  transition: transform 0s;   /* nhún xuống ngay lập tức, không trễ */
 }
 
 /* Hiệu ứng nảy khi có kết quả chấm điểm (pop / scale up-down) */
