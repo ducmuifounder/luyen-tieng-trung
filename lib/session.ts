@@ -34,6 +34,11 @@ export function buildSessionValue(studentId: string): string {
   return sign(studentId);
 }
 
+// ── Xác thực token (dùng cho /api/auth/resume) → trả studentId hoặc null ──────
+export function verifySessionValue(value: string): string | null {
+  return unsign(value);
+}
+
 export const COOKIE_OPTIONS = {
   httpOnly: true,
   secure:   process.env.NODE_ENV === "production",

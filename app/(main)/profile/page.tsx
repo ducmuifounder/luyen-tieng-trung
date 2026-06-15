@@ -4,6 +4,7 @@ import { getSession } from "@/lib/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { DailyGroup } from "@/components/profile/DailyGroup";
 import { ClearHistoryButton } from "@/components/profile/ClearHistoryButton";
+import { LogoutButton } from "@/components/profile/LogoutButton";
 
 export const metadata = { title: "Hồ sơ học viên | Tiếng Trung Bùi Nga" };
 
@@ -130,12 +131,7 @@ export default async function ProfilePage() {
 
       {/* ── Đăng xuất (cuối trang, tách biệt hẳn) ── */}
       <div className="pt-4 border-t border-gray-100">
-        <Link
-          href="/api/auth/logout"
-          className="block w-full rounded-xl border border-gray-200 bg-white py-3 text-center text-sm font-semibold text-gray-500 hover:bg-gray-50"
-        >
-          Đăng xuất
-        </Link>
+        <LogoutButton />
       </div>
 
     </main>

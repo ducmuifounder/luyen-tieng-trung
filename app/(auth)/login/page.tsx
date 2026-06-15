@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+
+const REMEMBER_KEY = "ltc_remember";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -10,6 +12,29 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error,    setError]    = useState("");
   const [loading,  setLoading]  = useState(false);
+  const [checking, setChecking] = useState(true); // đang kiểm tra token đã lưu
+
+  // Đã đăng nhập trên thiết bị này → tự khôi phục phiên, bỏ qua bước đăng nhập
+  useEffect(() => {
+    const token = localStorage.getItem(REMEMBER_KEY);
+    if (!token) { setChecking(false); return; }
+    (async () => {
+      try {
+        const res = await fetch("/api/auth/resume", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ token }),
+        });
+        if (res.ok) {
+          router.replace("/luyen-phat-am");
+          router.refresh();
+          return;
+        }
+        localStorage.removeItem(REMEMBER_KEY); // token hỏng → xóa
+      } catch { /* offline → hiện form đăng nhập */ }
+      setChecking(false);
+    })();
+  }, [router]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -27,6 +52,8 @@ export default function LoginPage() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Đăng nhập thất bại."); return; }
+      // Lưu token để lần sau không phải đăng nhập lại + khôi phục khi webview mất cookie
+      if (data.token) localStorage.setItem(REMEMBER_KEY, data.token);
       router.push("/luyen-phat-am");
       router.refresh();
     } catch {
@@ -34,6 +61,18 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  // Màn chờ trong lúc tự khôi phục phiên (tránh nháy form đăng nhập)
+  if (checking) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-gray-50">
+        <svg className="h-8 w-8 animate-spin text-emerald-500" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+        </svg>
+      </main>
+    );
   }
 
   return (

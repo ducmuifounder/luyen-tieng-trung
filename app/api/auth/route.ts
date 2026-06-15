@@ -53,9 +53,10 @@ export async function POST(req: NextRequest) {
       studentId = existing.id;
     }
 
-    // Set session cookie
-    const res = NextResponse.json({ ok: true });
-    res.cookies.set(COOKIE_NAME, buildSessionValue(studentId), COOKIE_OPTIONS);
+    // Set session cookie + trả token để client lưu localStorage (khôi phục khi webview mất cookie)
+    const token = buildSessionValue(studentId);
+    const res = NextResponse.json({ ok: true, token });
+    res.cookies.set(COOKIE_NAME, token, COOKIE_OPTIONS);
     return res;
 
   } catch (err) {
