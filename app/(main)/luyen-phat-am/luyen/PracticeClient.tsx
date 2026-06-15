@@ -299,15 +299,15 @@ export function PracticeClient({
               <span key={i} className="flex items-baseline gap-x-1.5">
                 {i > 0 && <span className="text-gray-300 font-light select-none">/</span>}
                 {part.isPinyin ? (
-                  <span className="text-[3.4rem] font-black text-emerald-600 lowercase leading-none">
+                  <span className="text-[2.7rem] font-black text-emerald-600 lowercase leading-none">
                     {part.text}
                   </span>
                 ) : part.isVietnamese ? (
-                  <span className="text-[1.55rem] font-medium text-gray-500 leading-tight">
+                  <span className="text-[1.05rem] font-medium text-gray-500 leading-tight">
                     {part.text}
                   </span>
                 ) : (
-                  <span className="text-[2.25rem] font-bold text-gray-800 leading-none">
+                  <span className="text-[1.6rem] font-bold text-gray-800 leading-none">
                     {part.text}
                   </span>
                 )}
@@ -317,24 +317,24 @@ export function PracticeClient({
         </div>
 
         {/* ── Lượt đọc — đặt dưới Header, dễ quan sát ─────────────────────────── */}
-        <div className="flex items-center justify-between rounded-2xl bg-emerald-50 border border-emerald-100 px-4 py-2.5">
-          <div className="flex items-baseline gap-2">
-            <span className="text-sm font-bold text-emerald-700">Lượt đọc</span>
-            <span className="text-base font-black text-emerald-700 tabular-nums">
+        <div className="flex items-center justify-between rounded-xl bg-emerald-50 border border-emerald-100 px-3 py-2">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-xs font-semibold text-emerald-700">Lượt đọc</span>
+            <span className="text-sm font-bold text-emerald-700 tabular-nums">
               {attemptCount}/{MAX_ATTEMPTS}
             </span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <div className="flex gap-1">
               {Array.from({ length: MAX_ATTEMPTS }, (_, i) => (
                 <span
                   key={i}
-                  className={`h-2 w-2 rounded-full ${i < attemptCount ? "bg-emerald-500" : "bg-emerald-200"}`}
+                  className={`h-1.5 w-1.5 rounded-full ${i < attemptCount ? "bg-emerald-500" : "bg-emerald-200"}`}
                 />
               ))}
             </div>
             {highestScore > 0 && (
-              <span className="text-xs font-semibold text-gray-500 whitespace-nowrap">
+              <span className="text-[11px] font-semibold text-gray-500 whitespace-nowrap">
                 Cao nhất:{" "}
                 <span style={{ color: scoreColor(Math.round(highestScore)) }}>
                   {Math.round(highestScore)}
@@ -390,7 +390,7 @@ export function PracticeClient({
         </div>
 
         {/* ── 3. VIDEO CARDS ───────────────────────────────────────────────── */}
-        <p className="text-center text-base font-bold text-gray-700">
+        <p className="text-center text-sm font-semibold text-gray-700 whitespace-nowrap">
           Ấn vào video để xem hướng dẫn chi tiết
         </p>
         <div className="flex gap-2 items-start">
@@ -407,6 +407,7 @@ export function PracticeClient({
               >
                 {/* Khung video */}
                 <div
+                  data-tap
                   onClick={() => handleCardClick(card.key)}
                   className={[
                     "relative h-40 rounded-2xl overflow-hidden cursor-pointer bg-gray-900 transition-all duration-300",

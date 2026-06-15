@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { VALID_FINALS_FOR_INITIAL, buildPinyin } from "@/lib/pinyin-data";
+import { getHanzi } from "@/lib/hanzi-map";
 import { PracticeClient } from "./PracticeClient";
 
 interface Props {
@@ -33,17 +34,40 @@ export default async function PracticePage({ searchParams }: Props) {
 
   const supabase = await createSupabaseServerClient();
 
-  // Tra nghĩa tiếng Việt từ bảng vocabulary (ưu tiên từ đơn âm tiết)
-  const { data: vocabRows } = await supabase
+  // Chữ Hán đại diện của âm tiết (vd "pǎo" → 跑)
+  const hanzi = getHanzi(initial, final, toneNum);
+
+  // ── Tra nghĩa tiếng Việt theo 3 tầng để phủ tối đa ──────────────────
+  // 1) vocabulary khớp pinyin có dấu  2) vocabulary khớp đúng chữ Hán đại diện
+  // 3) bảng syllable_meanings (nghĩa âm tiết đơn, bổ sung phần HSK còn thiếu)
+  const { data: byPinyin } = await supabase
     .from("vocabulary")
     .select("vietnamese_meaning, chinese_char")
     .eq("pinyin", pinyin)
     .limit(3);
 
-  if (vocabRows && vocabRows.length > 0) {
-    // Ưu tiên từ đơn ký tự (1 chữ Hán)
-    const single = vocabRows.find(r => [...r.chinese_char].length === 1);
-    vietnameseMeaning = (single ?? vocabRows[0]).vietnamese_meaning ?? null;
+  if (byPinyin && byPinyin.length > 0) {
+    const single = byPinyin.find(r => [...r.chinese_char].length === 1);
+    vietnameseMeaning = (single ?? byPinyin[0]).vietnamese_meaning ?? null;
+  }
+
+  if (!vietnameseMeaning && hanzi) {
+    const { data: byChar } = await supabase
+      .from("vocabulary")
+      .select("vietnamese_meaning")
+      .eq("chinese_char", hanzi)
+      .limit(1)
+      .maybeSingle();
+    vietnameseMeaning = byChar?.vietnamese_meaning ?? null;
+  }
+
+  if (!vietnameseMeaning) {
+    const { data: bySyl } = await supabase
+      .from("syllable_meanings")
+      .select("meaning")
+      .eq("pinyin", pinyin)
+      .maybeSingle();
+    vietnameseMeaning = bySyl?.meaning ?? null;
   }
 
   // Chú thích chi tiết cho 3 video (cột instruction). Thiếu → null → UI tự ẩn.

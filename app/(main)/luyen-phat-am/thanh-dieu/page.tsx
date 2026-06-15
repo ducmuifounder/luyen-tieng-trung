@@ -66,6 +66,7 @@ export default async function SelectTonePage({ searchParams }: Props) {
           return (
             <Link
               key={t}
+              data-tap
               href={`/luyen-phat-am/luyen?initial=${encodeURIComponent(initial)}&final=${encodeURIComponent(final)}&tone=${t}`}
               className="flex flex-col items-center rounded-2xl bg-white border border-gray-100
                          shadow-sm py-6 gap-1.5

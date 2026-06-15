@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getSession } from "@/lib/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { DailyGroup } from "@/components/profile/DailyGroup";
+import { ClearHistoryButton } from "@/components/profile/ClearHistoryButton";
 
 export const metadata = { title: "Hồ sơ học viên | Tiếng Trung Bùi Nga" };
 
@@ -110,7 +111,10 @@ export default async function ProfilePage() {
 
       {/* ── Lịch sử luyện tập ── */}
       <div className="space-y-5">
-        <h2 className="font-bold text-gray-800 text-base">Lịch sử luyện tập</h2>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="font-bold text-gray-800 text-base">Lịch sử luyện tập</h2>
+          {dates.length > 0 && <ClearHistoryButton />}
+        </div>
 
         {dates.length === 0 ? (
           <div className="rounded-2xl bg-gray-50 py-12 text-center text-sm text-gray-400">

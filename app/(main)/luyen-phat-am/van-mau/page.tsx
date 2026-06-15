@@ -39,6 +39,7 @@ export default async function SelectFinalPage({ searchParams }: Props) {
         {validFinals.map((f) => (
           <Link
             key={f}
+            data-tap
             href={`/luyen-phat-am/thanh-dieu?initial=${encodeURIComponent(initial)}&final=${encodeURIComponent(f)}`}
             className="flex items-center justify-center rounded-2xl bg-white border border-gray-100
                        shadow-sm py-4 text-lg font-semibold text-gray-800

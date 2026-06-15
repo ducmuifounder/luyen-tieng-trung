@@ -30,6 +30,7 @@ export default function SelectInitialPage() {
               {group.items.map((initial) => (
                 <Link
                   key={initial}
+                  data-tap
                   href={`/luyen-phat-am/van-mau?initial=${encodeURIComponent(initial)}`}
                   className="flex items-center justify-center rounded-2xl bg-white border border-gray-100
                              shadow-sm py-5 text-2xl font-bold text-gray-800
