@@ -153,13 +153,14 @@ export function PracticeClient({
   const [score,        setScore]        = useState<number | null>(null);
   const [detail,       setDetail]       = useState<ScoreDetail | null>(null);
   const [error,        setError]        = useState<string | null>(null);
-  const [countdown,    setCountdown]    = useState<number | null>(null);
 
   const initialVidRef = useRef<HTMLVideoElement>(null);
   const finalVidRef   = useRef<HTMLVideoElement>(null);
   const toneVidRef    = useRef<HTMLVideoElement>(null);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks   = useRef<Blob[]>([]);
+  const pressingRef   = useRef(false);   // đang giữ nút mic hay không
+  const startedAtRef  = useRef(0);       // mốc thời gian bắt đầu thu
 
   const locked = attemptCount >= MAX_ATTEMPTS;
   const hanzi  = getHanzi(initial, final, toneNum);
@@ -173,6 +174,17 @@ export function PracticeClient({
     { key: "tone",    label: "Thanh điệu", name: TONE_MARKS_DISPLAY[toneNum], videoFile: toneVideoFile(toneNum), ref: toneVidRef    },
   ];
 
+  // Preload cả 3 video & vẽ sẵn khung hình đầu để tránh trắng khung
+  useEffect(() => {
+    [initialVidRef, finalVidRef, toneVidRef].forEach(r => {
+      const v = r.current;
+      if (!v) return;
+      v.load();
+      const paintFirstFrame = () => { try { v.currentTime = 0.05; } catch { /* noop */ } };
+      v.addEventListener("loadedmetadata", paintFirstFrame, { once: true });
+    });
+  }, []);
+
   const handleCardClick = (key: CardKey) =>
     setActiveCard(prev => prev === key ? null : key);
 
@@ -182,10 +194,17 @@ export function PracticeClient({
     if (vid) { vid.currentTime = 0; vid.play(); }
   }, [activeCard, cards]); // eslint-disable-line
 
-  const startRecording = useCallback(async () => {
-    if (locked) return;
+  // ── NHẤN GIỮ ĐỂ NÓI (hold-to-talk) ────────────────────────────────────────
+  // Nhấn giữ → bắt đầu thu. Thả ra → dừng & gửi API.
+  const startHoldRecording = useCallback(async () => {
+    if (locked || !hanzi || recordState !== "idle") return;
+    pressingRef.current = true;
     setError(null); setScore(null); setDetail(null);
     audioChunks.current = [];
+
+    // Rung báo hiệu bắt đầu thu (chỉ hoạt động trên thiết bị hỗ trợ)
+    if (typeof navigator.vibrate === "function") navigator.vibrate(40);
+
     try {
       const stream   = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
@@ -195,19 +214,41 @@ export function PracticeClient({
       recorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.current.push(e.data); };
       recorder.onstop = async () => {
         stream.getTracks().forEach(t => t.stop());
-        await submitAudio(new Blob(audioChunks.current, { type: mimeType }), mimeType);
+        const heldMs = Date.now() - startedAtRef.current;
+        const blob   = new Blob(audioChunks.current, { type: mimeType });
+        // Bấm hụt / quá ngắn → bỏ qua, không gửi API
+        if (heldMs < 400 || blob.size < 1200) {
+          setError("Hãy nhấn giữ lâu hơn rồi đọc to âm tiết.");
+          setRecordState("idle");
+          return;
+        }
+        setRecordState("processing");
+        await submitAudio(blob, mimeType);
       };
-      recorder.start(); setRecordState("recording");
-      let secs = 3; setCountdown(secs);
-      const iv = setInterval(() => {
-        secs -= 1;
-        if (secs <= 0) { clearInterval(iv); setCountdown(null); recorder.stop(); setRecordState("processing"); }
-        else setCountdown(secs);
-      }, 1000);
+
+      // Nếu user đã thả tay trong lúc xin quyền mic → dừng ngay
+      if (!pressingRef.current) {
+        stream.getTracks().forEach(t => t.stop());
+        setRecordState("idle");
+        return;
+      }
+      startedAtRef.current = Date.now();
+      recorder.start();
+      setRecordState("recording");
     } catch {
-      setError("Không thể truy cập microphone."); setRecordState("idle");
+      pressingRef.current = false;
+      setError("Không thể truy cập microphone.");
+      setRecordState("idle");
     }
-  }, [locked]); // eslint-disable-line
+  }, [locked, hanzi, recordState]); // eslint-disable-line
+
+  const stopHoldRecording = useCallback(() => {
+    if (!pressingRef.current) return;
+    pressingRef.current = false;
+    if (typeof navigator.vibrate === "function") navigator.vibrate(15);
+    const rec = mediaRecorder.current;
+    if (rec && rec.state === "recording") rec.stop();
+  }, []);
 
   const submitAudio = useCallback(async (blob: Blob, mimeType: string) => {
     const form = new FormData();
@@ -344,6 +385,9 @@ export function PracticeClient({
         )}
 
         {/* ── 3. VIDEO CARDS ───────────────────────────────────────────────── */}
+        <p className="text-center text-xs text-gray-400 -mb-1">
+          Ấn vào video để xem hướng dẫn chi tiết
+        </p>
         <div className="flex gap-2 h-40">
           {cards.map(card => {
             const isActive   = activeCard === card.key;
@@ -366,6 +410,7 @@ export function PracticeClient({
                   ref={card.ref}
                   src={vidUrl(card.videoFile)}
                   playsInline
+                  preload="auto"
                   className="w-full h-full object-cover"
                   onError={e => { (e.target as HTMLVideoElement).style.display = "none"; }}
                 />
@@ -420,7 +465,7 @@ export function PracticeClient({
             Nghe mẫu
           </button>
 
-          {/* Đọc & chấm điểm */}
+          {/* Nhấn giữ để nói — nút Micro */}
           {!hanzi ? (
             <div className="flex-1 flex items-center justify-center text-center rounded-2xl bg-gray-100 py-4 px-2 text-xs font-medium text-gray-500">
               Âm tiết này không tồn tại, chưa chấm được
@@ -431,33 +476,47 @@ export function PracticeClient({
             </div>
           ) : (
             <button
-              onClick={startRecording}
-              disabled={recordState !== "idle"}
+              type="button"
+              onContextMenu={e => e.preventDefault()}
+              onTouchStart={e => { e.preventDefault(); startHoldRecording(); }}
+              onTouchEnd={e => { e.preventDefault(); stopHoldRecording(); }}
+              onTouchCancel={stopHoldRecording}
+              onMouseDown={startHoldRecording}
+              onMouseUp={stopHoldRecording}
+              onMouseLeave={stopHoldRecording}
+              disabled={recordState === "processing"}
+              style={{ touchAction: "none", WebkitUserSelect: "none", userSelect: "none" }}
               className={[
-                "flex-1 flex items-center justify-center gap-2 rounded-2xl py-4 text-sm font-bold text-white",
-                "active:scale-95 transition",
-                recordState === "recording"  ? "bg-red-500 animate-pulse"          : "",
-                recordState === "processing" ? "bg-gray-400 cursor-not-allowed"    : "",
-                recordState === "idle"       ? "bg-orange-500 hover:bg-orange-600" : "",
+                "flex-1 flex flex-col items-center justify-center gap-1 rounded-2xl py-3 font-bold text-white select-none",
+                "transition-transform",
+                recordState === "recording"  ? "bg-red-500 animate-pulse scale-105 ring-4 ring-red-200" : "",
+                recordState === "processing" ? "bg-gray-400 cursor-not-allowed"                          : "",
+                recordState === "idle"       ? "bg-orange-500 hover:bg-orange-600 active:scale-95"        : "",
               ].join(" ")}
             >
-              {recordState === "recording" ? (
-                <><span className="h-2.5 w-2.5 rounded-full bg-white" /> {countdown}s</>
-              ) : recordState === "processing" ? (
+              {recordState === "processing" ? (
                 <>
-                  <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <svg className="h-6 w-6 animate-spin" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                   </svg>
-                  Đang chấm...
+                  <span className="text-xs">Đang chấm...</span>
+                </>
+              ) : recordState === "recording" ? (
+                <>
+                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z" />
+                    <path d="M19 11a7 7 0 0 1-14 0H3a9 9 0 0 0 8 8.94V23h2v-3.06A9 9 0 0 0 21 11h-2z" />
+                  </svg>
+                  <span className="text-xs">Đang thu... thả ra để chấm</span>
                 </>
               ) : (
                 <>
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round"
-                      d="M12 18.5A6.5 6.5 0 0 0 18.5 12V10m-13 2a6.5 6.5 0 0 0 6.5 6.5M12 2a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z" />
+                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z" />
+                    <path d="M19 11a7 7 0 0 1-14 0H3a9 9 0 0 0 8 8.94V23h2v-3.06A9 9 0 0 0 21 11h-2z" />
                   </svg>
-                  Đọc và chấm điểm
+                  <span className="text-xs">Nhấn giữ để nói</span>
                 </>
               )}
             </button>
