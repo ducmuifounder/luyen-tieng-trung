@@ -118,28 +118,6 @@ function ScoreRing({ value }: { value: number }) {
   );
 }
 
-// ── Skeleton khi đang chờ Azure ───────────────────────────────────────────────
-function ScoreSkeleton() {
-  return (
-    <div className="rounded-2xl bg-white border border-gray-100 shadow-sm px-5 py-4 animate-pulse">
-      <div className="flex items-center gap-5">
-        <div className="flex-1 flex flex-col gap-4">
-          {[0, 1, 2].map(i => (
-            <div key={i} className="flex flex-col gap-1.5">
-              <div className="flex justify-between">
-                <div className="h-3 w-20 bg-gray-200 rounded" />
-                <div className="h-3 w-6 bg-gray-200 rounded" />
-              </div>
-              <div className="h-2 bg-gray-200 rounded-full" />
-            </div>
-          ))}
-        </div>
-        <div className="rounded-full bg-gray-200 flex-shrink-0" style={{ width: 88, height: 88 }} />
-      </div>
-    </div>
-  );
-}
-
 // ── Component chính ───────────────────────────────────────────────────────────
 export function PracticeClient({
   initial, final, toneNum, pinyin, itemId,
@@ -152,6 +130,7 @@ export function PracticeClient({
   const [highestScore, setHighestScore] = useState(initialHighestScore);
   const [score,        setScore]        = useState<number | null>(null);
   const [detail,       setDetail]       = useState<ScoreDetail | null>(null);
+  const [tips,         setTips]         = useState<string[]>([]);
   const [error,        setError]        = useState<string | null>(null);
 
   const initialVidRef = useRef<HTMLVideoElement>(null);
@@ -199,7 +178,7 @@ export function PracticeClient({
   const startHoldRecording = useCallback(async () => {
     if (locked || !hanzi || recordState !== "idle") return;
     pressingRef.current = true;
-    setError(null); setScore(null); setDetail(null);
+    setError(null); setScore(null); setDetail(null); setTips([]);
     audioChunks.current = [];
 
     // Rung báo hiệu bắt đầu thu (chỉ hoạt động trên thiết bị hỗ trợ)
@@ -265,11 +244,11 @@ export function PracticeClient({
     form.append("unitType", hanzi ? "hanzi" : "combined");
     try {
       const res  = await fetch("/api/score-pronunciation", { method: "POST", body: form });
-      const data = await res.json() as { score?: number; feedback?: string; detail?: ScoreDetail; error?: string };
+      const data = await res.json() as { score?: number; feedback?: string; tips?: string[]; detail?: ScoreDetail; error?: string };
       if (data.error || data.score === undefined) {
         setError(`Lỗi: ${data.error ?? "Không nhận được điểm"}`); return;
       }
-      setScore(data.score); setDetail(data.detail ?? null);
+      setScore(data.score); setDetail(data.detail ?? null); setTips(data.tips ?? []);
       if (studentId) {
         const r = await fetch("/api/practice/attempt", {
           method: "POST", headers: { "Content-Type": "application/json" },
@@ -320,15 +299,15 @@ export function PracticeClient({
                 <span key={i} className="flex items-baseline gap-x-1.5">
                   {i > 0 && <span className="text-gray-300 font-light select-none">/</span>}
                   {part.isPinyin ? (
-                    <span className="text-3xl font-black text-red-600 lowercase leading-none">
+                    <span className="text-[3.4rem] font-black text-red-600 lowercase leading-none">
                       {part.text}
                     </span>
                   ) : part.isVietnamese ? (
-                    <span className="text-sm font-medium text-gray-500 leading-none">
+                    <span className="text-[1.55rem] font-medium text-gray-500 leading-tight">
                       {part.text}
                     </span>
                   ) : (
-                    <span className="text-xl font-bold text-gray-800 leading-none">
+                    <span className="text-[2.25rem] font-bold text-gray-800 leading-none">
                       {part.text}
                     </span>
                   )}
@@ -359,30 +338,47 @@ export function PracticeClient({
           </div>
         </div>
 
-        {/* ── 2. ĐIỂM SỐ ──────────────────────────────────────────────────── */}
+        {/* ── 2. ĐIỂM SỐ — LUÔN HIỂN THỊ (mốc 0 khi chưa có dữ liệu) ───────── */}
+        {/* Khối cố định, không bao giờ ẩn → màn hình không nhảy khi nhấn giữ */}
+        <div className="rounded-2xl bg-white border border-gray-100 shadow-sm px-5 py-4">
+          <div className="flex items-center gap-5">
 
-        {/* Skeleton khi đang chờ Azure xử lý */}
-        {recordState === "processing" && <ScoreSkeleton />}
+            {/* Bên trái: 3 dòng chỉ số (mặc định 0) */}
+            <div className="flex-1 flex flex-col gap-3 min-w-0">
+              <MetricRow label="Chính xác" value={detail?.accuracy ?? 0} />
+              <MetricRow label="Lưu loát"  value={detail?.fluency  ?? 0} />
+              <MetricRow label="Tổng hợp"  value={score ?? 0}           />
+            </div>
 
-        {/* Kết quả thực */}
-        {score !== null && detail && recordState !== "processing" && (
-          <div className="rounded-2xl bg-white border border-gray-100 shadow-sm px-5 py-4">
-            <div className="flex items-center gap-5">
-
-              {/* Bên trái: 3 dòng chỉ số */}
-              <div className="flex-1 flex flex-col gap-3 min-w-0">
-                <MetricRow label="Chính xác" value={detail.accuracy} />
-                <MetricRow label="Lưu loát"  value={detail.fluency}  />
-                <MetricRow label="Tổng hợp"  value={score}           />
-              </div>
-
-              {/* Bên phải: vòng tròn */}
-              <div className="flex-shrink-0">
-                <ScoreRing value={score} />
-              </div>
+            {/* Bên phải: vòng tròn (spinner cùng kích thước khi đang chấm) */}
+            <div className="flex-shrink-0 flex items-center justify-center" style={{ width: 88, height: 88 }}>
+              {recordState === "processing" ? (
+                <svg className="h-10 w-10 animate-spin text-orange-400" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+              ) : (
+                <ScoreRing value={score ?? 0} />
+              )}
             </div>
           </div>
-        )}
+
+          {/* Phân tích lỗi & lời khuyên từ AI */}
+          {tips.length > 0 && recordState !== "processing" && (
+            <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-2">
+              <p className="text-xs font-bold uppercase tracking-wide text-gray-400">Nhận xét &amp; cần khắc phục</p>
+              {tips.map((tip, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <span
+                    className="mt-1.5 h-1.5 w-1.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: scoreColor(score ?? 0) }}
+                  />
+                  <span className="text-sm text-gray-600 leading-snug">{tip}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* ── 3. VIDEO CARDS ───────────────────────────────────────────────── */}
         <p className="text-center text-xs text-gray-400 -mb-1">

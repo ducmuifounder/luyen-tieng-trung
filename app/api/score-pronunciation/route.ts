@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
       ReferenceText: referenceText,
       GradingSystem: "HundredMark",
       Dimension:     "Comprehensive",
+      Granularity:   "Phoneme",   // lấy điểm từng âm vị → chỉ ra lỗi cụ thể
       EnableMiscue:  false,
     })).toString("base64");
 
@@ -88,9 +89,48 @@ export async function POST(req: NextRequest) {
     else if (score >= 65) feedback = "Đạt yêu cầu. Cần luyện thêm.";
     else                  feedback = "Chưa đạt. Hãy nghe mẫu và thử lại.";
 
+    // ── Phân tích lỗi chi tiết → lời khuyên cụ thể (không chỉ con số) ──────────
+    type Phoneme = { Phoneme?: string; AccuracyScore?: number; PronunciationAssessment?: { AccuracyScore?: number } };
+    type Word    = { Word?: string; ErrorType?: string; AccuracyScore?: number;
+                     PronunciationAssessment?: { ErrorType?: string; AccuracyScore?: number };
+                     Phonemes?: Phoneme[] };
+
+    const tips: string[] = [];
+    const words: Word[] = nb?.Words ?? [];
+    const weak: { p: string; s: number }[] = [];
+
+    for (const w of words) {
+      const errType = w?.ErrorType ?? w?.PronunciationAssessment?.ErrorType;
+      if (errType === "Omission")  tips.push(`Bạn chưa đọc rõ phần "${w.Word ?? ""}". Hãy đọc đầy đủ âm tiết.`);
+      if (errType === "Insertion") tips.push(`Có âm thừa "${w.Word ?? ""}". Chỉ đọc đúng âm tiết mục tiêu.`);
+      for (const ph of (w?.Phonemes ?? [])) {
+        const ps  = ph?.AccuracyScore ?? ph?.PronunciationAssessment?.AccuracyScore ?? 100;
+        const sym = ph?.Phoneme ?? "";
+        if (sym && ps < 60) weak.push({ p: sym, s: Math.round(ps) });
+      }
+    }
+
+    // 3 âm yếu nhất → chỉ rõ
+    weak.sort((a, b) => a.s - b.s);
+    for (const w of weak.slice(0, 3)) {
+      tips.push(`Âm "${w.p}" chưa chuẩn (${w.s} điểm) — nghe lại video rồi đọc chậm, lặp lại nhiều lần.`);
+    }
+
+    // Lời khuyên tổng quát nếu chưa có lỗi cụ thể
+    if (weak.length === 0 && tips.length === 0) {
+      if (score >= 90)      tips.push("Tuyệt vời! Khẩu hình và âm đều chuẩn, giữ phong độ nhé.");
+      else if (score >= 65) tips.push("Khá tốt. Đọc to và dứt khoát hơn để âm tròn, rõ hơn.");
+      else                  tips.push("Hãy bám sát khẩu hình trong video, đọc chậm và rõ từng âm.");
+    }
+    // Gợi ý về độ trôi chảy (khi đọc đúng nhưng ngắt quãng)
+    if (fluScore && fluScore < 50 && score >= 50) {
+      tips.push("Đọc liền mạch hơn, tránh ngắt quãng hay kéo dài giữa âm.");
+    }
+
     return NextResponse.json({
       score,
       feedback,
+      tips,
       detail: {
         pronunciation: Math.round(accurScore),
         accuracy:      Math.round(accurScore),
